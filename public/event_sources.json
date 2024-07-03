@@ -571,6 +571,11 @@
 			"name": "Greater Brewing Company",
 			"googleCalendarId": "c_aiork42cpqlb1t487q65gslmqk@group.calendar.google.com",
 			"city": "Santa Cruz"
+		},
+		{
+			"name": "San Francisco Queer Pinball League",
+			"googleCalendarId": "0bead8563c1c04721df993607fdb8afb93ccbb6f4eb56f7ffd3c73f54dc94f66@group.calendar.google.com",
+			"city": "San Francisco"
 		}
 	],
 	"wordPressTribe": [
