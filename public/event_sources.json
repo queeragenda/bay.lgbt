@@ -147,14 +147,6 @@
 			"city": "San Francisco"
 		},
 		{
-			"name": "Mother",
-			"username": "motherbarsf",
-			"context_clues": [
-				""
-			],
-			"city": "San Francisco"
-		},
-		{
 			"name": "non-binary run club",
 			"username": "nbrcsf",
 			"context_clues": [
@@ -607,6 +599,11 @@
 			"name": "Guildhouse",
 			"url": "https://www.guildhouse.gg/events?format=json",
 			"city": "San Jose"
+		},
+		{
+			"name": "Mother",
+			"url": "https://www.mothersf.com/events-1?format=json",
+			"city": "San Francisco"
 		},
 		{
 			"name": "The Neighbor's Pub",
