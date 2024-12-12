@@ -4,7 +4,7 @@ interface EventNormalSource {
 	display?: string;
 }
 
-// The Event object is based on https://fullcalendar.io/docs/event-object, as well as 
+// The Event object is based on https://fullcalendar.io/docs/event-object, as well as
 interface Event {
 	title: string | null;
 	start: Date | null;
@@ -39,7 +39,7 @@ export const serverFetchHeaders = {
 
 export function logTimeElapsedSince(startTime: number, message: string) {
 	const timeElapsed = Date.now() - startTime;
-	console.log(`[time] ${timeElapsed}ms for ${message}`);
+	logger.debug(`[time] ${timeElapsed}ms for ${message}`);
 }
 
-export const eventDayDurationSplitThreshold = 3; 
+export const eventDayDurationSplitThreshold = 3;

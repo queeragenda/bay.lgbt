@@ -1,11 +1,12 @@
 import eventSourcesJSON from 'public/event_sources.json';
-import { logTimeElapsedSince, serverCacheMaxAgeSeconds, serverStaleWhileInvalidateSeconds, serverFetchHeaders } from '~~/utils/util';
+import { serverCacheMaxAgeSeconds, serverStaleWhileInvalidateSeconds, serverFetchHeaders } from '~~/utils/util';
 import { DateTime } from 'luxon';
+import { logger as mainLogger } from '../../utils/logger';
+
+const logger = mainLogger.child({ provider: 'squarespace' });
 
 export default defineCachedEventHandler(async (event) => {
-	const startTime = new Date();
 	const body = await fetchSquarespaceEvents();
-	logTimeElapsedSince(startTime, 'Squarespace: events fetched.');
 	return {
 		body
 	}
@@ -16,7 +17,6 @@ export default defineCachedEventHandler(async (event) => {
 });
 
 async function fetchSquarespaceEvents() {
-	console.log('Fetching Squarespace events...')
 	let squarespaceSources = await useStorage().getItem('squarespaceSources');
 	try {
 		squarespaceSources = await Promise.all(
@@ -24,7 +24,7 @@ async function fetchSquarespaceEvents() {
 				// Add current date in milliseconds to the URL to get events starting from this moment.
 				const response = await fetch(source.url, { headers: serverFetchHeaders });
 				if (!response.ok) {
-					console.error('[Squarespace] Error: could not fetch events from', source.url);
+          logger.error({ url: source.url, response }, 'Could not fetch events');
 					return {
 						events: [],
 						city: source.city,
@@ -39,8 +39,8 @@ async function fetchSquarespaceEvents() {
 			})
 		);
 		await useStorage().setItem('squarespaceSources', squarespaceSources);
-	} catch (e) {
-		console.log('Error fetching Squarespace events: ', e);
+	} catch (error) {
+    logger.error({ error }, 'Error fetching Squarespace events');
 	}
 	return squarespaceSources;
 };

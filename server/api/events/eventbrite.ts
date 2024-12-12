@@ -1,12 +1,14 @@
 import eventSourcesJSON from 'public/event_sources.json';
-import { logTimeElapsedSince, serverCacheMaxAgeSeconds, serverFetchHeaders, serverStaleWhileInvalidateSeconds } from '~~/utils/util';
+import { serverCacheMaxAgeSeconds, serverFetchHeaders, serverStaleWhileInvalidateSeconds } from '~~/utils/util';
 import { JSDOM } from 'jsdom';
 import { DateTime } from 'luxon';
 
+import { logger as mainLogger } from '../../utils/logger';
+
+const logger = mainLogger.child({ provider: 'eventbrite' });
+
 export default defineCachedEventHandler(async (event) => {
-	const startTime = new Date();
 	const body = await fetchEventbriteEvents();
-	logTimeElapsedSince(startTime, 'Eventbrite: events fetched.');
 	return {
 		body
 	}
@@ -17,22 +19,21 @@ export default defineCachedEventHandler(async (event) => {
 });
 
 async function fetchEventbriteEvents() {
-	console.log('Fetching Eventbrite events...');
-
 	if (process.env.EVENTBRITE_API_KEY === undefined) {
-		console.error("No Eventbrite API key found. Please set the EVENTBRITE_API_KEY environment variable.");
+		throw new Error("No Eventbrite API key found. Please set the EVENTBRITE_API_KEY environment variable.");
 	}
 
 	let eventbriteSources = await useStorage().getItem('eventbriteSources');
 	try {
 		eventbriteSources = await Promise.all(
 			eventSourcesJSON.eventbriteAccounts.map(async (source) => {
-				console.log('Fetching Eventbrite events from', source.url);
+        logger.debug({ url: source.url }, 'Fetching events');
+
 				return await fetch(source.url, { headers: serverFetchHeaders })
 					// Error check.
 					.then(res => {
 						if (!res.ok) {
-							console.error(`Error fetching Eventbrite events for ${source.name}: ${res.status} ${res.statusText}`);
+              logger.error({ name: source.name, response: res }, `Error fetching Eventbrite events`);
 							return {
 								events: [],
 								city: source.city
@@ -47,7 +48,9 @@ async function fetchEventbriteEvents() {
 						// 	.map(event => convertSchemaDotOrgEventToFullCalendarEvent(event, source.name));
 						const dom = new JSDOM(html);
 						const eventsJson = JSON.parse(dom.window.document.querySelectorAll('script[type="application/ld+json"]')[1].innerHTML);
-						console.log(`eventsJson for url ${source.url}:`, eventsJson);
+
+						logger.debug({ url: source.url, eventsJson }, 'Loaded eventsJson');
+
 						const eventsFC = eventsJson.map(event => convertSchemaDotOrgEventToFullCalendarEvent(event, source.name));
 
 						// Since public & private Eventbrite endpoints provides a series of events as a single event, we need to split them up using their API.
@@ -80,8 +83,8 @@ async function fetchEventbriteEvents() {
 		await useStorage().setItem('eventbriteSources', allEventbriteSources);
 		return allEventbriteSources;
 	}
-	catch (e) {
-		console.error("Error fetching Eventbrite events: ", e);
+	catch (error) {
+  	logger.error({ error }, 'Failed to fetch events');
 	}
 	return eventbriteSources;
 };

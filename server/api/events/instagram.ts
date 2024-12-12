@@ -1,17 +1,28 @@
 // Yikes this file is gross. Want to help me rerefactor it? I would appreciate it!
 import { Configuration, OpenAIApi } from 'openai';
 import eventSourcesJSON from 'public/event_sources.json';
-import { logTimeElapsedSince, serverFetchHeaders, serverStaleWhileInvalidateSeconds } from '~~/utils/util';
+import { serverFetchHeaders, serverStaleWhileInvalidateSeconds } from '~~/utils/util';
 import { InstagramEvent, PrismaClient } from '@prisma/client'
 import vision from '@google-cloud/vision';
 import { DateTime } from 'luxon';
+import { logger as mainLogger } from '../../utils/logger';
 
+const logger = mainLogger.child({ provider: 'instagram' });
 
 export default defineCachedEventHandler(async (event) => {
-	const body = await fetchInstagramEvents();
-	return {
-		body
-	}
+  try {
+  	const body = await fetchInstagramEvents();
+
+    return {
+  		body
+  	}
+  } catch (error) {
+    logger.error({ error }, 'Failed to fetch events');
+    throw createError({
+      statusCode: 500,
+      statusMessage: '' + error,
+    })
+  }
 }, {
 	// Set this cache to only 1 hour to best utilize the Instagram API rate limit.
 	maxAge: 60 * 60 + 10,
@@ -21,10 +32,10 @@ export default defineCachedEventHandler(async (event) => {
 
 async function doOCR(urls: string[]) {
 	if (!process.env.GOOGLE_CLOUD_VISION_PRIVATE_KEY) {
-		console.error('GOOGLE_CLOUD_VISION_PRIVATE_KEY not found.');
+		throw new Error('GOOGLE_CLOUD_VISION_PRIVATE_KEY not found.');
 	}
 	if (!process.env.GOOGLE_CLOUD_VISION_CLIENT_EMAIL) {
-		console.error('GOOGLE_CLOUD_VISION_CLIENT_EMAIL not found.');
+		throw new Error('GOOGLE_CLOUD_VISION_CLIENT_EMAIL not found.');
 	}
 	const client = new vision.ImageAnnotatorClient({
 		scopes: ['https://www.googleapis.com/auth/cloud-platform'],
@@ -52,15 +63,14 @@ function getInstagramQuery(sourceUsername: string) {
 }
 
 async function fetchInstagramEvents() {
-	console.log('Fetching Instagram events...');
 	if (!process.env.INSTAGRAM_BUSINESS_USER_ID) {
-		console.error('INSTAGRAM_BUSINESS_USER_ID not found.');
+		throw new Error('INSTAGRAM_BUSINESS_USER_ID not found.');
 	}
 	if (!process.env.INSTAGRAM_USER_ACCESS_TOKEN) {
-		console.error('INSTAGRAM_USER_ACCESS_TOKEN not found.');
+		throw new Error('INSTAGRAM_USER_ACCESS_TOKEN not found.');
 	}
 	if (!process.env.OPENAI_API_KEY) {
-		console.error('OPENAI_API_KEY not found.');
+		throw new Error('OPENAI_API_KEY not found.');
 	}
 
 	const startTime = Date.now();
@@ -74,7 +84,6 @@ async function fetchInstagramEvents() {
 
 	// const instagramJson = [eventSourcesJSON.instagram[0], eventSourcesJSON.instagram[1]];
 	const instagramJson = eventSourcesJSON.instagram;
-	console.log('instagramJson: ', instagramJson);
 
 	let instagramOrganizersDb = new Array();
 	try {
@@ -97,11 +106,10 @@ async function fetchInstagramEvents() {
 		}));
 		instagramOrganizersDb = instagramOrganizersDb.sort((a, b) => a.lastUpdated.getTime() - b.lastUpdated.getTime());
 	}
-	catch (err) {
-		console.error('Could not add Instagram organizers to database: ', err);
+	catch (error) {
+    logger.error({ error }, 'Could not add Instagram organizers to database');
 		return await useStorage().getItem('instagramEventSources');
 	}
-	logTimeElapsedSince(startTime, 'Instagram: fetch/add organizers to database');
 
 	// InstagramOrganizers to update.
 	let instagramOrganizersIG = new Array();
@@ -115,28 +123,28 @@ async function fetchInstagramEvents() {
 			const totalCPUTime = appUsage.total_cputime;
 			const totalTime = appUsage.total_time;
 			let newOrganizer = await req.json();
-			console.log(`[IG] Current rate limit: call_count:${callCount} total_cputime:${totalCPUTime} total_time:${totalTime}`)
+
+      logger.debug({appUsage, username: instagramOrganizerDb.username}, 'Current rate limit')
+
 			if (!newOrganizer.error) {
 				instagramOrganizersIG.push(newOrganizer);
 				++firstIndexOfNonUpdatedOrganizer;
 				if (callCount > 35 || totalCPUTime > 35 || totalTime > 35) {
-					console.log("[IG] throttled with " + callCount + " " + totalCPUTime + " " + totalTime);
+          logger.info({callCount, totalCPUTime, totalTime}, "Throttled");
 					break
 				}
 			}
 			else {
-				console.log(newOrganizer.error)
-				console.error(`It appears the username ${instagramOrganizerDb.username} cannot be found 
-				using business discovery. Confirm it is correct. If so, then that account is not a business account. 
+        logger.error({error: newOrganizer.error, username: instagramOrganizerDb.username}, `It appears the username cannot be found
+				using business discovery. Confirm it is correct. If so, then that account is not a business account.
 				Consider asking them to enable this feature. Or, you have exceeded Instagram's rate limit.`)
 				break;
 			}
 		}
-	} catch (err) {
-		console.error('Could not get Instagram organizers to update: ', err);
+	} catch (error) {
+    logger.error({ error }, 'Could not get Instagram organizers to update');
 		return await useStorage().getItem('instagramEventSources');
 	}
-	logTimeElapsedSince(startTime, 'Instagram: fetching Instagram data');
 
 	let eventsZippedAllSources = null;
 	try {
@@ -164,12 +172,10 @@ async function fetchInstagramEvents() {
 					];
 				}));
 			}));
-	} catch (err) {
-		console.error('Could not zip events: ', err);
+	} catch (error) {
+    logger.error({ error }, 'Could not zip events');
 		return await useStorage().getItem('instagramEventSources');
 	}
-
-	logTimeElapsedSince(startTime, 'Instagram: zipping events');
 
 	const eventsZippedAllSourcesMap = eventsZippedAllSources.map((eventsZipped) => {
 		return new Map(eventsZipped);
@@ -181,18 +187,15 @@ async function fetchInstagramEvents() {
 			// Promise always returns false, so we filter here.
 			return eventsZipped.filter(([id, eventZip]) => eventZip.dbEntry === null)
 				.map(([id, eventZip]) => {
-					console.log('eventZip.newEntry: ', eventZip.newEntry)
 					return {
 						...eventZip.newEntry,
 					}
 				});
 		});
-	} catch (err) {
-		console.error('Could not filter events: ', err);
+	} catch (error) {
+    logger.error({ error }, 'Could not filter events');
 		return await useStorage().getItem('instagramEventSources');
 	}
-	logTimeElapsedSince(startTime, 'Instagram: filtering events');
-
 
 	let unregisteredInstagramEventsWithOcrAllSources = unregisteredInstagramEventsAllSources;
 	try {
@@ -218,7 +221,7 @@ async function fetchInstagramEvents() {
 							// See https://developers.facebook.com/support/bugs/3431232597133817/?join_id=fa03b2657f7a9c for updates.
 							break;
 						default:
-							console.error(`Unknown media type: ${event.media_type} for event: ${event}`);
+              logger.error({ event }, `Unknown media type: ${event.media_type}`);
 							break;
 					}
 
@@ -230,11 +233,10 @@ async function fetchInstagramEvents() {
 				}));
 			}));
 	}
-	catch (err) {
-		console.error('Could not perform OCR: ', err);
+	catch (error) {
+		logger.error(error, 'Could not perform OCR');
 		return await useStorage().getItem('instagramEventSources');
 	}
-	logTimeElapsedSince(startTime, 'Instagram: performing OCR');
 
 	const fixGeneratedJson = (generatedJson: string) => {
 		return generatedJson.replace(/^[^{]*/, '').replace(/[^}]*$/, '');
@@ -272,7 +274,7 @@ async function fetchInstagramEvents() {
 						`"title": string | null,\n` +
 						`"startDay": number | null,\n` +
 						`"endDay": number | null,\n` +
-						// Putting `isPastEvent` and `startHourMilitaryTime` knocks some sense into the model into not imagining start times. 
+						// Putting `isPastEvent` and `startHourMilitaryTime` knocks some sense into the model into not imagining start times.
 						`"isPastEvent": boolean,\n` +
 						`"hasStartHourInPost": boolean,\n` +
 						`"startHourMilitaryTime": number | null,\n` +
@@ -322,7 +324,7 @@ async function fetchInstagramEvents() {
 						"\n" +
 						"A:";
 
-					console.log('prompt:', startPrompt)
+          logger.debug({ prompt }, 'Generated prompt for first round of inference')
 					const runResponse = async (prompt) => {
 						try {
 							const res = await openai.createChatCompletion({
@@ -334,9 +336,9 @@ async function fetchInstagramEvents() {
 								max_tokens: 500,
 							});
 							return res;
-						} catch (e) {
-							console.log('Error: ', e.response.data);
-							throw e;
+						} catch (error) {
+              logger.error({ error }, 'Error running gpt');
+							throw error;
 						}
 					};
 
@@ -346,7 +348,6 @@ async function fetchInstagramEvents() {
 					while (initialGenerationAttempts < maxInitialGenerationAttempts) {
 						try {
 							unvalidatedCompletion = { event, data: (await runResponse(startPrompt)).data };
-							console.log('output json 1', fixGeneratedJson(unvalidatedCompletion.data.choices[0].message.content));
 
 							// This ignores validation for now.
 							return {
@@ -395,8 +396,6 @@ async function fetchInstagramEvents() {
 						`Input: The post's OCR says "midnight"` + "\n" +
 						`Output: The JSON with "hasStartHourInPost" set to \`true\` because "midnight" represents 12 AM.`;
 
-					// console.log('validation prompt', validationPrompt);
-
 					let validationGenerationAttempts = 0;
 					const maxValidationGenerationAttempts = 2;
 					while (validationGenerationAttempts < maxValidationGenerationAttempts) {
@@ -408,7 +407,6 @@ async function fetchInstagramEvents() {
 									response.data.choices[0].message.content
 								)
 							};
-							console.log('output json 2', validatedCompletion.data)
 							return validatedCompletion;
 						} catch (e) {
 							++validationGenerationAttempts;
@@ -420,11 +418,10 @@ async function fetchInstagramEvents() {
 				}));
 			}));
 	}
-	catch (err) {
-		console.error('Could not get OpenAI responses: ', err);
+	catch (error) {
+    logger.error({ error }, 'Could not get OpenAI responses');
 		return await useStorage().getItem('instagramEventSources');
 	}
-	logTimeElapsedSince(startTime, 'Instagram: getting OpenAI responses');
 
 	let parsedOpenAIResponsesAllSources = [];
 	try {
@@ -510,11 +507,10 @@ async function fetchInstagramEvents() {
 				}));
 			}));
 	}
-	catch (err) {
-		console.error('Could not parse OpenAI responses: ', err);
+	catch (error) {
+    logger.error({ error }, 'Could not parse OpenAI response');
 		return await useStorage().getItem('instagramEventSources');
 	}
-	logTimeElapsedSince(startTime, 'Instagram: parsing OpenAI responses');
 
 	let updatedInstagramSources = [];
 	try {
@@ -537,7 +533,7 @@ async function fetchInstagramEvents() {
 							&& post.hasStartHourInPost === true
 							&& post.isPastEvent === false
 						) {
-							console.log("Adding InstagramEvent to database: ", post);
+              logger.debug({ post }, "Adding InstagramEvent to database");
 
 							let end = DateTime.fromObject({ year: post.endYear, month: post.endMonth, day: post.startDay, hour: post.endHourMilitaryTime, minute: post.endMinute }, { zone: 'America/Los_Angeles' });
 							// Allow Luxon to automatically take care of overflow (i.e. day 32 of the month).
@@ -556,7 +552,7 @@ async function fetchInstagramEvents() {
 							});
 						}
 						else {
-							console.log("Adding InstagramNonEvent to database: ", post);
+              logger.debug({ post }, "Adding InstagramNonEvent to database");
 							return await prisma.instagramNonEvent.create({
 								data: {
 									igId: post.id,
@@ -605,19 +601,17 @@ async function fetchInstagramEvents() {
 							// Check if event has actually passed, with a margin of 30 days needing to pass. It's given as UTC.
 							const deleteAfterDate = DateTime.now().minus({ days: 30 }).toUTC().toJSDate();
 							const isEventFinished = event.end < deleteAfterDate;
-							console.log(`isEventFinished: ${isEventFinished}, event: ${event.title}`);
 							// Delete events not within a year of current date, in order to avoid clogging database with events that may never happen.
 							const isEventWithinYear = event.start > DateTime.now().minus({ years: 1 }).toUTC().toJSDate();
-							console.log(`isEventWithinYear: ${isEventWithinYear}, event: ${event.title}`)
 							if (!isEventFinished && isEventWithinYear) return;
 
 							// Delete from events.
-							console.log('deleting event', event.igId, event.title)
+              logger.debug({ event }, 'deleting event')
 							await prisma.instagramEvent.delete({ where: { igId: event.igId } });
 						}
 						else {
 							// Delete from non-events.
-							console.log('deleting non-event', event.igId)
+              logger.debug({ event }, 'deleting non-event')
 							await prisma.instagramNonEvent.delete({ where: { igId: event.igId } });
 						}
 					}
@@ -650,11 +644,10 @@ async function fetchInstagramEvents() {
 
 			}));
 	}
-	catch (err) {
-		console.error('Could not update Instagram Events: ', err);
+	catch (error) {
+    logger.error({ error }, 'Could not update Instagram Events');
 		return await useStorage().getItem('instagramEventSources');
 	}
-	logTimeElapsedSince(startTime, 'Instagram: getting new event sources & pruning');
 
 	const nonUpdatedInstagramOrganizersDb = instagramOrganizersDb.slice(firstIndexOfNonUpdatedOrganizer);
 	let nonUpdatedInstagramSources = [];
@@ -677,8 +670,8 @@ async function fetchInstagramEvents() {
 				};
 			}));
 	}
-	catch {
-		console.error('Could return Instagram Events for non-updated sources: ', err);
+	catch (error) {
+    logger.error({ error }, 'Could return Instagram Events for non-updated sources');
 		return await useStorage().getItem('instagramEventSources');
 	}
 
@@ -695,7 +688,7 @@ async function getAllInstagramOrganizers(json) {
 				.then(res => {
 					const appUsage = res.headers.get('X-App-Usage');
 					if (appUsage) {
-						console.table(`[rate] Instagram; X-App-Usage after ${source.username} is ${appUsage}. Throttled when any reach 100(%).`);
+            logger.info({username: source.username, appUsage}, `Instagram X-App-Usage. Throttled when any reach 100(%).`);
 					}
 					return res.json();
 				})

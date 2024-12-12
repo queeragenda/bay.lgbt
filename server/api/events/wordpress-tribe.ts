@@ -1,10 +1,11 @@
 import eventSourcesJSON from 'public/event_sources.json';
-import { logTimeElapsedSince, serverCacheMaxAgeSeconds, serverStaleWhileInvalidateSeconds, serverFetchHeaders } from '~~/utils/util';
+import { serverCacheMaxAgeSeconds, serverStaleWhileInvalidateSeconds, serverFetchHeaders } from '~~/utils/util';
+import { logger as mainLogger } from '../../utils/logger';
+
+const logger = mainLogger.child({ provider: 'wix' });
 
 export default defineCachedEventHandler(async (event) => {
-	const startTime = new Date();
 	const body = await fetchWordPressTribeEvents();
-	logTimeElapsedSince(startTime, 'Tockify: events fetched.');
 	return {
 		body
 	}
@@ -15,7 +16,6 @@ export default defineCachedEventHandler(async (event) => {
 });
 
 async function fetchWordPressTribeEvents() {
-	console.log('Fetching WordPress Tribe events...')
 	let wordPressTribeSources = await useStorage().getItem('wordPressTribeSources');
 	try {
 		wordPressTribeSources = await Promise.all(
@@ -35,7 +35,7 @@ async function fetchWordPressTribeEvents() {
 		));
 		await useStorage().setItem('wordPressTribeSources', wordPressTribeSources);
 	} catch (error) {
-		console.error(error);
+    logger.error({ error }, 'Failed to fetch events');
 	}
 	return wordPressTribeSources;
 };

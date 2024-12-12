@@ -1,12 +1,14 @@
 import eventSourcesJSON from 'public/event_sources.json';
-import { logTimeElapsedSince, serverCacheMaxAgeSeconds, serverStaleWhileInvalidateSeconds, serverFetchHeaders } from '~~/utils/util';
+import { serverCacheMaxAgeSeconds, serverStaleWhileInvalidateSeconds, serverFetchHeaders } from '~~/utils/util';
 import { JSDOM } from 'jsdom';
 import { DateTime } from 'luxon';
+import { logger as mainLogger } from '../../utils/logger';
+
+const logger = mainLogger.child({ provider: 'with-friends' });
 
 export default defineCachedEventHandler(async (event) => {
 	const startTime = new Date();
 	const body = await fetchWithFriendsEvents();
-	logTimeElapsedSince(startTime, 'With Friends: events fetched.');
 	return {
 		body
 	}
@@ -17,7 +19,6 @@ export default defineCachedEventHandler(async (event) => {
 });
 
 async function fetchWithFriendsEvents() {
-	console.log('Fetching With Friends events...')
 	let withFriendsSources = await useStorage().getItem('withFriendsSources');
 	try {
 		withFriendsSources = await Promise.all(
@@ -34,7 +35,7 @@ async function fetchWithFriendsEvents() {
 				const fetchUrl = new URL(`https://withfriends.co/Movement/${source.movementId}/Incremental_Events:Display_Infinite_Scroll=1,Display_Item_Element=li,Display_Item_Classes=Event_List_Item%20wf-event%20wf-front,Display_Iterator_Element=None,Display_Increment=5,Display_Template_Alias=New_List,Display_Segment=Upcoming,Display_Property_Alias=Events,Display_Front=1,Display_Item_Type=Movement,Display_Item=${source.movementId}`);
 				const response = await fetch(fetchUrl, headers);
 				if (!response.ok) {
-					console.error('[With Friends] Error: could not fetch events from', source.name);
+          logger.error({ name: source.name, response }, 'Could not fetch events');
 					return {
 						events: [],
 						city: source.city,
@@ -76,8 +77,8 @@ async function fetchWithFriendsEvents() {
 			})
 		);
 		await useStorage().setItem('withFriendsSources', withFriendsSources);
-	} catch (e) {
-		console.log('Error fetching With Friends events: ', e);
+	} catch (error) {
+    logger.error({ error }, 'Error fetching With Friends events');
 	}
 	return withFriendsSources;
 };

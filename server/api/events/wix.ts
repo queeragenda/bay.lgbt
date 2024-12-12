@@ -1,11 +1,12 @@
 import eventSourcesJSON from 'public/event_sources.json';
-import { logTimeElapsedSince, serverCacheMaxAgeSeconds, serverFetchHeaders, serverStaleWhileInvalidateSeconds } from '~~/utils/util';
+import { serverCacheMaxAgeSeconds, serverFetchHeaders, serverStaleWhileInvalidateSeconds } from '~~/utils/util';
 import { DateTime } from 'luxon';
+import { logger as mainLogger } from '../../utils/logger';
+
+const logger = mainLogger.child({ provider: 'wix' });
 
 export default defineCachedEventHandler(async (event) => {
-	const startTime = new Date();
 	const body = await fetchWixEvents();
-	logTimeElapsedSince(startTime, 'Wix: events fetched.');
 	return {
 		body
 	}
@@ -16,20 +17,18 @@ export default defineCachedEventHandler(async (event) => {
 });
 
 async function fetchWixEvents() {
-	console.log('Fetching Wix events...');
-
 	let wixSources = await useStorage().getItem('wixSources');
 	try {
 		wixSources = await Promise.all(
 			eventSourcesJSON.wix.map(async (source) => {
 				if (process.env[source.api_key_envvar] === undefined) {
-					console.error(`No Wix API key named ${source.api_key_envvar} found for ${source.name}. Consider setting this environment variable.`);
+					logger.error(`No Wix API key named ${source.api_key_envvar} found for ${source.name}. Consider setting this environment variable.`);
 				}
 				if (process.env[source.account_id_envvar] === undefined) {
-					console.error(`No Wix account ID named ${source.account_id_envvar} found for ${source.name}. Consider setting this environment variable.`);
+					logger.error(`No Wix account ID named ${source.account_id_envvar} found for ${source.name}. Consider setting this environment variable.`);
 				}
 				if (process.env[source.site_id_envvar] === undefined) {
-					console.error(`No Wix site ID named ${source.site_id_envvar} found for ${source.name}. Consider setting this environment variable.`);
+					logger.error(`No Wix site ID named ${source.site_id_envvar} found for ${source.name}. Consider setting this environment variable.`);
 				}
 
 				const url = 'https://www.wixapis.com/events/v1/events/query'
@@ -59,7 +58,7 @@ async function fetchWixEvents() {
 				});
 				// Error check.
 				if (!response.ok) {
-					console.error(`Error fetching Wix events for ${source.name}: ${response.status} ${response.statusText}`);
+          logger.error({ name: source.name, response }, `Error fetching Wix events`);
 					return {
 						events: [],
 						city: source.city
@@ -85,8 +84,8 @@ async function fetchWixEvents() {
 			));
 		await useStorage().setItem('wixSources', wixSources);
 	}
-	catch (e) {
-		console.error("Error fetching Wix events: ", e);
+	catch (error) {
+    logger.error({ error }, "Error fetching Wix events");
 	}
 	return wixSources;
 };

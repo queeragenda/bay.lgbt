@@ -1,10 +1,11 @@
 import eventSourcesJSON from 'public/event_sources.json';
-import { logTimeElapsedSince, serverCacheMaxAgeSeconds, serverStaleWhileInvalidateSeconds, serverFetchHeaders } from '~~/utils/util';
+import { serverCacheMaxAgeSeconds, serverStaleWhileInvalidateSeconds, serverFetchHeaders } from '~~/utils/util';
+import { logger as mainLogger } from '../../utils/logger';
+
+const logger = mainLogger.child({ provider: 'tockify' });
 
 export default defineCachedEventHandler(async (event) => {
-	const startTime = new Date();
 	const body = await fetchTockifyEvents();
-	logTimeElapsedSince(startTime, 'Tockify: events fetched.');
 	return {
 		body
 	}
@@ -15,7 +16,6 @@ export default defineCachedEventHandler(async (event) => {
 });
 
 async function fetchTockifyEvents() {
-	console.log('Fetching Tockify events...')
 	let tockifySources = await useStorage().getItem('tockifySources');
 	try {
 		tockifySources = await Promise.all(
@@ -23,10 +23,11 @@ async function fetchTockifyEvents() {
 				const url = new URL(source.url);
 				// Add current date in milliseconds to the URL to get events starting from this moment.
 				url.searchParams.append('startms', Date.now().toString());
-				console.log('Fetching Tockify events from', url.href);
+        logger.debug({ name: source.name, url: url.href }, 'Fetching Tockify events');
+
 				const res = await fetch(url, { headers: serverFetchHeaders });
 				if (!res.ok) {
-					console.error(`Error fetching Tockify events for ${source.name}: ${res.status} ${res.statusText}`);
+          logger.error({ name: source.name, url: url.href, response: res }, 'Error fetching Tockify events');
 					return {
 						events: [],
 						city: source.city
@@ -43,8 +44,8 @@ async function fetchTockifyEvents() {
 		);
 		await useStorage().setItem('tockifySources', tockifySources);
 	}
-	catch (e) {
-		console.log('Error fetching Tockify events: ', e);
+	catch (error) {
+    logger.error({ error }, 'Error fetching Tockify events');
 	}
 	return tockifySources;
 };

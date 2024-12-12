@@ -1,11 +1,13 @@
 import eventSourcesJSON from 'public/event_sources.json';
-import { logTimeElapsedSince, serverCacheMaxAgeSeconds, serverStaleWhileInvalidateSeconds, serverFetchHeaders } from '~~/utils/util';
+import { serverCacheMaxAgeSeconds, serverStaleWhileInvalidateSeconds, serverFetchHeaders } from '~~/utils/util';
 import { DateTime } from 'luxon';
 
+import { logger as mainLogger } from '../../utils/logger';
+
+const logger = mainLogger.child({ provider: 'forbidden-tickets' });
+
 export default defineCachedEventHandler(async (event) => {
-	const startTime = new Date();
 	const body = await fetchForbiddenTicketsEvents();
-	logTimeElapsedSince(startTime, 'ForbiddenTickets: events fetched.');
 	return {
 		body
 	}
@@ -16,7 +18,6 @@ export default defineCachedEventHandler(async (event) => {
 });
 
 async function fetchForbiddenTicketsEvents() {
-	console.log('Fetching ForbiddenTickets events...')
 	let forbiddenTicketsSources = await useStorage().getItem('forbiddenTicketsSources');
 	try {
 		forbiddenTicketsSources = await Promise.all(
@@ -25,7 +26,7 @@ async function fetchForbiddenTicketsEvents() {
 
 				const response = await fetch(fetchUrl);
 				if (!response.ok) {
-					console.error('[ForbiddenTickets] Error: could not fetch events from', source.name);
+          logger.error({ response: await response.text() }, 'Could not fetch events');
 					return {
 						events: [],
 						city: source.city,
@@ -43,7 +44,7 @@ async function fetchForbiddenTicketsEvents() {
 					}
 				});
 
-				console.log('Fetched ForbiddenTickets events: ', events)
+				logger.debug({ events }, 'Fetched events');
 
 				return {
 					events,
@@ -52,8 +53,8 @@ async function fetchForbiddenTicketsEvents() {
 			})
 		);
 		await useStorage().setItem('forbiddenTicketsSources', forbiddenTicketsSources);
-	} catch (e) {
-		console.log('Error fetching ForbiddenTickets events: ', e);
+	} catch (error) {
+  	logger.error({ error }, 'Failed to fetch events');
 	}
 	return forbiddenTicketsSources;
 };

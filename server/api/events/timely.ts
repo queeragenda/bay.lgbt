@@ -1,11 +1,12 @@
 import eventSourcesJSON from 'public/event_sources.json';
-import { logTimeElapsedSince, serverCacheMaxAgeSeconds, serverStaleWhileInvalidateSeconds, serverFetchHeaders } from '~~/utils/util';
+import { serverCacheMaxAgeSeconds, serverStaleWhileInvalidateSeconds, serverFetchHeaders } from '~~/utils/util';
 import { DateTime } from 'luxon';
+import { logger as mainLogger } from '../../utils/logger';
+
+const logger = mainLogger.child({ provider: 'timely' });
 
 export default defineCachedEventHandler(async (event) => {
-	const startTime = new Date();
 	const body = await fetchTimelyEvents();
-	logTimeElapsedSince(startTime, 'Timely: events fetched.');
 	return {
 		body
 	}
@@ -16,7 +17,6 @@ export default defineCachedEventHandler(async (event) => {
 });
 
 async function fetchTimelyEvents() {
-	console.log('Fetching Timely events...')
 	let timelySources = await useStorage().getItem('timelySources');
 	try {
 		timelySources = await Promise.all(
@@ -38,7 +38,7 @@ async function fetchTimelyEvents() {
 				const response = await fetch(fetchUrl, { headers });
 
 				if (!response.ok) {
-					console.error('[Timely] Error: could not fetch events from', source.name);
+          logger.error({ name: source.name, response }, 'Could not fetch events');
 					return {
 						events: [],
 						city: source.city,
@@ -67,8 +67,8 @@ async function fetchTimelyEvents() {
 			})
 		);
 		await useStorage().setItem('timelySources', timelySources);
-	} catch (e) {
-		console.log('Error fetching Timely events: ', e);
+	} catch (error) {
+    logger.error({ error }, 'Error fetching Timely events');
 	}
 	return timelySources;
 };
