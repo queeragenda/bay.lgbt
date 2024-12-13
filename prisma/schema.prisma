@@ -12,9 +12,9 @@ datasource db {
 
 model InstagramEventOrganizer {
   id           Int                 @id @default(autoincrement())
-  username     String              @unique @db.VarChar(255)
-  city         String              @db.VarChar(255)
-  contextClues String              @db.VarChar(255)
+  username     String              @unique
+  city         String
+  contextClues String
   events       InstagramEvent[]
   nonEvents    InstagramNonEvent[]
   createdAt    DateTime            @default(now())
@@ -22,11 +22,11 @@ model InstagramEventOrganizer {
 }
 
 model InstagramEvent {
-  igId        String                  @id @db.VarChar(255)
-  title       String                  @db.VarChar(255)
+  igId        String                  @id
+  title       String
   start       DateTime
   end         DateTime
-  url         String                  @db.VarChar(255)
+  url         String
   organizer   InstagramEventOrganizer @relation(fields: [organizerId], references: [id])
   organizerId Int
   createdAt   DateTime                @default(now())
@@ -35,7 +35,7 @@ model InstagramEvent {
 }
 
 model InstagramNonEvent {
-  igId        String                  @id @db.VarChar(255)
+  igId        String                  @id
   organizer   InstagramEventOrganizer @relation(fields: [organizerId], references: [id])
   organizerId Int
   createdAt   DateTime                @default(now())
