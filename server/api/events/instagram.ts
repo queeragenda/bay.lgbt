@@ -117,7 +117,8 @@ async function fetchInstagramEvents() {
 	try {
 		// Get all Instagram organizers from database, sorted by lastUpdated, with most recent first.
 		for (const instagramOrganizerDb of instagramOrganizersDb) {
-			let req = await fetch(getInstagramQuery(instagramOrganizerDb.username), { headers: serverFetchHeaders });
+      const url = getInstagramQuery(instagramOrganizerDb.username);
+			let req = await fetch(url, { headers: serverFetchHeaders });
 			const appUsage = JSON.parse((await req).headers.get('X-App-Usage'));
 			const callCount = appUsage.call_count;
 			const totalCPUTime = appUsage.total_cputime;
@@ -135,7 +136,7 @@ async function fetchInstagramEvents() {
 				}
 			}
 			else {
-        logger.error({error: newOrganizer.error, username: instagramOrganizerDb.username}, `It appears the username cannot be found
+        logger.error({error: newOrganizer.error, username: instagramOrganizerDb.username, url}, `It appears the username cannot be found
 				using business discovery. Confirm it is correct. If so, then that account is not a business account.
 				Consider asking them to enable this feature. Or, you have exceeded Instagram's rate limit.`)
 				continue;
