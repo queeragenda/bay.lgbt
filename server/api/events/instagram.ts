@@ -17,7 +17,7 @@ export default defineCachedEventHandler(async (event) => {
   		body
   	}
   } catch (error) {
-    logger.error({ error }, 'Failed to fetch events');
+    logger.error({ error: error.toString() }, 'Failed to fetch events');
     throw createError({
       statusCode: 500,
       statusMessage: '' + error,
@@ -107,7 +107,7 @@ async function fetchInstagramEvents() {
 		instagramOrganizersDb = instagramOrganizersDb.sort((a, b) => a.lastUpdated.getTime() - b.lastUpdated.getTime());
 	}
 	catch (error) {
-    logger.error({ error }, 'Could not add Instagram organizers to database');
+    logger.error({ error: error.toString() }, 'Could not add Instagram organizers to database');
 		return await useStorage().getItem('instagramEventSources');
 	}
 
@@ -142,7 +142,7 @@ async function fetchInstagramEvents() {
 			}
 		}
 	} catch (error) {
-    logger.error({ error }, 'Could not get Instagram organizers to update');
+    logger.error({ error: error.toString() }, 'Could not get Instagram organizers to update');
 		return await useStorage().getItem('instagramEventSources');
 	}
 
@@ -173,7 +173,7 @@ async function fetchInstagramEvents() {
 				}));
 			}));
 	} catch (error) {
-    logger.error({ error }, 'Could not zip events');
+    logger.error({ error: error.toString() }, 'Could not zip events');
 		return await useStorage().getItem('instagramEventSources');
 	}
 
@@ -193,7 +193,7 @@ async function fetchInstagramEvents() {
 				});
 		});
 	} catch (error) {
-    logger.error({ error }, 'Could not filter events');
+    logger.error({ error: error.toString() }, 'Could not filter events');
 		return await useStorage().getItem('instagramEventSources');
 	}
 
@@ -234,7 +234,7 @@ async function fetchInstagramEvents() {
 			}));
 	}
 	catch (error) {
-		logger.error(error, 'Could not perform OCR');
+		logger.error({ error: error.toString() }, 'Could not perform OCR');
 		return await useStorage().getItem('instagramEventSources');
 	}
 
@@ -337,7 +337,7 @@ async function fetchInstagramEvents() {
 							});
 							return res;
 						} catch (error) {
-              logger.error({ error }, 'Error running gpt');
+              logger.error({ error: error.toString() }, 'Error running gpt');
 							throw error;
 						}
 					};
@@ -419,7 +419,7 @@ async function fetchInstagramEvents() {
 			}));
 	}
 	catch (error) {
-    logger.error({ error }, 'Could not get OpenAI responses');
+    logger.error({ error: error.toString() }, 'Could not get OpenAI responses');
 		return await useStorage().getItem('instagramEventSources');
 	}
 
@@ -508,7 +508,7 @@ async function fetchInstagramEvents() {
 			}));
 	}
 	catch (error) {
-    logger.error({ error }, 'Could not parse OpenAI response');
+    logger.error({ error: error.toString() }, 'Could not parse OpenAI response');
 		return await useStorage().getItem('instagramEventSources');
 	}
 
@@ -645,7 +645,7 @@ async function fetchInstagramEvents() {
 			}));
 	}
 	catch (error) {
-    logger.error({ error }, 'Could not update Instagram Events');
+    logger.error({ error: error.toString() }, 'Could not update Instagram Events');
 		return await useStorage().getItem('instagramEventSources');
 	}
 
@@ -671,7 +671,7 @@ async function fetchInstagramEvents() {
 			}));
 	}
 	catch (error) {
-    logger.error({ error }, 'Could return Instagram Events for non-updated sources');
+    logger.error({ error: error.toString() }, 'Could return Instagram Events for non-updated sources');
 		return await useStorage().getItem('instagramEventSources');
 	}
 

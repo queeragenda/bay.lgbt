@@ -40,7 +40,7 @@ async function fetchSquarespaceEvents() {
 		);
 		await useStorage().setItem('squarespaceSources', squarespaceSources);
 	} catch (error) {
-    logger.error({ error }, 'Error fetching Squarespace events');
+    logger.error({ error: error.toString() }, 'Error fetching Squarespace events');
 	}
 	return squarespaceSources;
 };

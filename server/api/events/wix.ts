@@ -85,7 +85,7 @@ async function fetchWixEvents() {
 		await useStorage().setItem('wixSources', wixSources);
 	}
 	catch (error) {
-    logger.error({ error }, "Error fetching Wix events");
+    logger.error({ error: error.toString() }, "Error fetching Wix events");
 	}
 	return wixSources;
 };

@@ -45,7 +45,7 @@ async function fetchTockifyEvents() {
 		await useStorage().setItem('tockifySources', tockifySources);
 	}
 	catch (error) {
-    logger.error({ error }, 'Error fetching Tockify events');
+    logger.error({ error: error.toString() }, 'Error fetching Tockify events');
 	}
 	return tockifySources;
 };

@@ -84,7 +84,7 @@ async function fetchEventbriteEvents() {
 		return allEventbriteSources;
 	}
 	catch (error) {
-  	logger.error({ error }, 'Failed to fetch events');
+  	logger.error({ error: error.toString() }, 'Failed to fetch events');
 	}
 	return eventbriteSources;
 };

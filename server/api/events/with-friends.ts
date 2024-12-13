@@ -78,7 +78,7 @@ async function fetchWithFriendsEvents() {
 		);
 		await useStorage().setItem('withFriendsSources', withFriendsSources);
 	} catch (error) {
-    logger.error({ error }, 'Error fetching With Friends events');
+    logger.error({ error: error.toString() }, 'Error fetching With Friends events');
 	}
 	return withFriendsSources;
 };

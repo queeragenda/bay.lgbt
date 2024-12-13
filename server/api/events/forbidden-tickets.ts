@@ -54,7 +54,7 @@ async function fetchForbiddenTicketsEvents() {
 		);
 		await useStorage().setItem('forbiddenTicketsSources', forbiddenTicketsSources);
 	} catch (error) {
-  	logger.error({ error }, 'Failed to fetch events');
+  	logger.error({ error: error.toString() }, 'Failed to fetch events');
 	}
 	return forbiddenTicketsSources;
 };

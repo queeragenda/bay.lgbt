@@ -35,7 +35,7 @@ async function fetchWordPressTribeEvents() {
 		));
 		await useStorage().setItem('wordPressTribeSources', wordPressTribeSources);
 	} catch (error) {
-    logger.error({ error }, 'Failed to fetch events');
+    logger.error({ error: error.toString() }, 'Failed to fetch events');
 	}
 	return wordPressTribeSources;
 };

@@ -68,7 +68,7 @@ async function fetchTimelyEvents() {
 		);
 		await useStorage().setItem('timelySources', timelySources);
 	} catch (error) {
-    logger.error({ error }, 'Error fetching Timely events');
+    logger.error({ error: error.toString() }, 'Error fetching Timely events');
 	}
 	return timelySources;
 };
