@@ -6,40 +6,39 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_PRISMA_URL")
-  directUrl = env("DATABASE_URL_NON_POOLING")
 }
 
 model InstagramEventOrganizer {
-  id              Int       @default(autoincrement()) @id
-  username        String    @db.VarChar(255) @unique
-  city            String    @db.VarChar(255)
-  contextClues    String    @db.VarChar(255)
-  events          InstagramEvent[]
-  nonEvents       InstagramNonEvent[]
-  createdAt       DateTime  @default(now())
-  lastUpdated     DateTime  @default(now())
+  id           Int                 @id @default(autoincrement())
+  username     String              @unique @db.VarChar(255)
+  city         String              @db.VarChar(255)
+  contextClues String              @db.VarChar(255)
+  events       InstagramEvent[]
+  nonEvents    InstagramNonEvent[]
+  createdAt    DateTime            @default(now())
+  lastUpdated  DateTime            @default(now())
 }
 
 model InstagramEvent {
-  igId            String    @db.VarChar(255) @id
-  title           String    @db.VarChar(255)
-  start           DateTime
-  end             DateTime
-  url             String    @db.VarChar(255)
-  organizer       InstagramEventOrganizer @relation(fields: [organizerId], references: [id])
-  organizerId     Int
-  createdAt       DateTime  @default(now())
+  igId        String                  @id @db.VarChar(255)
+  title       String                  @db.VarChar(255)
+  start       DateTime
+  end         DateTime
+  url         String                  @db.VarChar(255)
+  organizer   InstagramEventOrganizer @relation(fields: [organizerId], references: [id])
+  organizerId Int
+  createdAt   DateTime                @default(now())
 
   @@index([organizerId])
 }
 
 model InstagramNonEvent {
-  igId            String    @db.VarChar(255) @id
-  organizer       InstagramEventOrganizer @relation(fields: [organizerId], references: [id])
-  organizerId     Int
-  createdAt       DateTime  @default(now())
+  igId        String                  @id @db.VarChar(255)
+  organizer   InstagramEventOrganizer @relation(fields: [organizerId], references: [id])
+  organizerId Int
+  createdAt   DateTime                @default(now())
 
   @@index([organizerId])
 }
