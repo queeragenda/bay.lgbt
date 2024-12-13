@@ -138,7 +138,7 @@ async function fetchInstagramEvents() {
         logger.error({error: newOrganizer.error, username: instagramOrganizerDb.username}, `It appears the username cannot be found
 				using business discovery. Confirm it is correct. If so, then that account is not a business account.
 				Consider asking them to enable this feature. Or, you have exceeded Instagram's rate limit.`)
-				break;
+				continue;
 			}
 		}
 	} catch (error) {
