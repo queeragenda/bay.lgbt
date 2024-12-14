@@ -325,7 +325,7 @@ async function fetchInstagramEvents() {
 						"\n" +
 						"A:";
 
-          logger.debug({ prompt }, 'Generated prompt for first round of inference')
+          logger.debug({ prompt: startPrompt }, 'Generated prompt for first round of inference')
 					const runResponse = async (prompt) => {
 						try {
 							const res = await openai.createChatCompletion({
