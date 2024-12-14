@@ -24,7 +24,7 @@ async function fetchSquarespaceEvents() {
 				// Add current date in milliseconds to the URL to get events starting from this moment.
 				const response = await fetch(source.url, { headers: serverFetchHeaders });
 				if (!response.ok) {
-          logger.error({ url: source.url, response }, 'Could not fetch events');
+					logger.error({ url: source.url, response }, 'Could not fetch events');
 					return {
 						events: [],
 						city: source.city,
@@ -40,7 +40,7 @@ async function fetchSquarespaceEvents() {
 		);
 		await useStorage().setItem('squarespaceSources', squarespaceSources);
 	} catch (error) {
-    logger.error({ error: error.toString() }, 'Error fetching Squarespace events');
+		logger.error({ error: error.toString() }, 'Error fetching Squarespace events');
 	}
 	return squarespaceSources;
 };

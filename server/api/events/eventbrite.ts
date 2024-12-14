@@ -27,13 +27,13 @@ async function fetchEventbriteEvents() {
 	try {
 		eventbriteSources = await Promise.all(
 			eventSourcesJSON.eventbriteAccounts.map(async (source) => {
-        logger.debug({ url: source.url }, 'Fetching events');
+				logger.debug({ url: source.url }, 'Fetching events');
 
 				return await fetch(source.url, { headers: serverFetchHeaders })
 					// Error check.
 					.then(res => {
 						if (!res.ok) {
-              logger.error({ name: source.name, response: res }, `Error fetching Eventbrite events`);
+							logger.error({ name: source.name, response: res }, `Error fetching Eventbrite events`);
 							return {
 								events: [],
 								city: source.city
@@ -84,7 +84,7 @@ async function fetchEventbriteEvents() {
 		return allEventbriteSources;
 	}
 	catch (error) {
-  	logger.error({ error: error.toString() }, 'Failed to fetch events');
+		logger.error({ error: error.toString() }, 'Failed to fetch events');
 	}
 	return eventbriteSources;
 };

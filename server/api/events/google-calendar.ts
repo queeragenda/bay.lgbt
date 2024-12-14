@@ -62,7 +62,7 @@ async function fetchGoogleCalendarEvents() {
 		await useStorage().setItem('googleCalendarSources', googleCalendarSources);
 	}
 	catch (error) {
-    logger.error({ error: error.toString() }, "Failed to fetch events");
+		logger.error({ error: error.toString() }, "Failed to fetch events");
 	}
 	return googleCalendarSources;
 }

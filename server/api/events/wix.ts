@@ -58,7 +58,7 @@ async function fetchWixEvents() {
 				});
 				// Error check.
 				if (!response.ok) {
-          logger.error({ name: source.name, response }, `Error fetching Wix events`);
+					logger.error({ name: source.name, response }, `Error fetching Wix events`);
 					return {
 						events: [],
 						city: source.city
@@ -85,7 +85,7 @@ async function fetchWixEvents() {
 		await useStorage().setItem('wixSources', wixSources);
 	}
 	catch (error) {
-    logger.error({ error: error.toString() }, "Error fetching Wix events");
+		logger.error({ error: error.toString() }, "Error fetching Wix events");
 	}
 	return wixSources;
 };

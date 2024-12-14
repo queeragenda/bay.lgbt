@@ -23,11 +23,11 @@ async function fetchTockifyEvents() {
 				const url = new URL(source.url);
 				// Add current date in milliseconds to the URL to get events starting from this moment.
 				url.searchParams.append('startms', Date.now().toString());
-        logger.debug({ name: source.name, url: url.href }, 'Fetching Tockify events');
+				logger.debug({ name: source.name, url: url.href }, 'Fetching Tockify events');
 
 				const res = await fetch(url, { headers: serverFetchHeaders });
 				if (!res.ok) {
-          logger.error({ name: source.name, url: url.href, response: res }, 'Error fetching Tockify events');
+					logger.error({ name: source.name, url: url.href, response: res }, 'Error fetching Tockify events');
 					return {
 						events: [],
 						city: source.city
@@ -45,7 +45,7 @@ async function fetchTockifyEvents() {
 		await useStorage().setItem('tockifySources', tockifySources);
 	}
 	catch (error) {
-    logger.error({ error: error.toString() }, 'Error fetching Tockify events');
+		logger.error({ error: error.toString() }, 'Error fetching Tockify events');
 	}
 	return tockifySources;
 };

@@ -26,7 +26,7 @@ async function fetchForbiddenTicketsEvents() {
 
 				const response = await fetch(fetchUrl);
 				if (!response.ok) {
-          logger.error({ response: await response.text() }, 'Could not fetch events');
+					logger.error({ response: await response.text() }, 'Could not fetch events');
 					return {
 						events: [],
 						city: source.city,
@@ -54,7 +54,7 @@ async function fetchForbiddenTicketsEvents() {
 		);
 		await useStorage().setItem('forbiddenTicketsSources', forbiddenTicketsSources);
 	} catch (error) {
-  	logger.error({ error: error.toString() }, 'Failed to fetch events');
+		logger.error({ error: error.toString() }, 'Failed to fetch events');
 	}
 	return forbiddenTicketsSources;
 };

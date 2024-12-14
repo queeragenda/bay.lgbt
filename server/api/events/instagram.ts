@@ -10,19 +10,19 @@ import { logger as mainLogger } from '../../utils/logger';
 const logger = mainLogger.child({ provider: 'instagram' });
 
 export default defineCachedEventHandler(async (event) => {
-  try {
-  	const body = await fetchInstagramEvents();
+	try {
+		const body = await fetchInstagramEvents();
 
-    return {
-  		body
-  	}
-  } catch (error) {
-    logger.error({ error: error.toString() }, 'Failed to fetch events');
-    throw createError({
-      statusCode: 500,
-      statusMessage: '' + error,
-    })
-  }
+		return {
+			body
+		}
+	} catch (error) {
+		logger.error({ error: error.toString() }, 'Failed to fetch events');
+		throw createError({
+			statusCode: 500,
+			statusMessage: '' + error,
+		})
+	}
 }, {
 	// Set this cache to only 1 hour to best utilize the Instagram API rate limit.
 	maxAge: 60 * 60 + 10,
@@ -107,7 +107,7 @@ async function fetchInstagramEvents() {
 		instagramOrganizersDb = instagramOrganizersDb.sort((a, b) => a.lastUpdated.getTime() - b.lastUpdated.getTime());
 	}
 	catch (error) {
-    logger.error({ error: error.toString() }, 'Could not add Instagram organizers to database');
+		logger.error({ error: error.toString() }, 'Could not add Instagram organizers to database');
 		return await useStorage().getItem('instagramEventSources');
 	}
 
@@ -117,7 +117,7 @@ async function fetchInstagramEvents() {
 	try {
 		// Get all Instagram organizers from database, sorted by lastUpdated, with most recent first.
 		for (const instagramOrganizerDb of instagramOrganizersDb) {
-      const url = getInstagramQuery(instagramOrganizerDb.username);
+			const url = getInstagramQuery(instagramOrganizerDb.username);
 			let req = await fetch(url, { headers: serverFetchHeaders });
 			const appUsage = JSON.parse((await req).headers.get('X-App-Usage'));
 			const callCount = appUsage.call_count;
@@ -125,25 +125,25 @@ async function fetchInstagramEvents() {
 			const totalTime = appUsage.total_time;
 			let newOrganizer = await req.json();
 
-      logger.debug({appUsage, username: instagramOrganizerDb.username}, 'Current rate limit')
+			logger.debug({ appUsage, username: instagramOrganizerDb.username }, 'Current rate limit')
 
 			if (!newOrganizer.error) {
 				instagramOrganizersIG.push(newOrganizer);
 				++firstIndexOfNonUpdatedOrganizer;
 				if (callCount > 35 || totalCPUTime > 35 || totalTime > 35) {
-          logger.info({callCount, totalCPUTime, totalTime}, "Throttled");
+					logger.info({ callCount, totalCPUTime, totalTime }, "Throttled");
 					break
 				}
 			}
 			else {
-        logger.error({error: newOrganizer.error, username: instagramOrganizerDb.username, url}, `It appears the username cannot be found
+				logger.error({ error: newOrganizer.error, username: instagramOrganizerDb.username, url }, `It appears the username cannot be found
 				using business discovery. Confirm it is correct. If so, then that account is not a business account.
 				Consider asking them to enable this feature. Or, you have exceeded Instagram's rate limit.`)
 				continue;
 			}
 		}
 	} catch (error) {
-    logger.error({ error: error.toString() }, 'Could not get Instagram organizers to update');
+		logger.error({ error: error.toString() }, 'Could not get Instagram organizers to update');
 		return await useStorage().getItem('instagramEventSources');
 	}
 
@@ -174,7 +174,7 @@ async function fetchInstagramEvents() {
 				}));
 			}));
 	} catch (error) {
-    logger.error({ error: error.toString() }, 'Could not zip events');
+		logger.error({ error: error.toString() }, 'Could not zip events');
 		return await useStorage().getItem('instagramEventSources');
 	}
 
@@ -194,7 +194,7 @@ async function fetchInstagramEvents() {
 				});
 		});
 	} catch (error) {
-    logger.error({ error: error.toString() }, 'Could not filter events');
+		logger.error({ error: error.toString() }, 'Could not filter events');
 		return await useStorage().getItem('instagramEventSources');
 	}
 
@@ -222,7 +222,7 @@ async function fetchInstagramEvents() {
 							// See https://developers.facebook.com/support/bugs/3431232597133817/?join_id=fa03b2657f7a9c for updates.
 							break;
 						default:
-              logger.error({ event }, `Unknown media type: ${event.media_type}`);
+							logger.error({ event }, `Unknown media type: ${event.media_type}`);
 							break;
 					}
 
@@ -325,7 +325,7 @@ async function fetchInstagramEvents() {
 						"\n" +
 						"A:";
 
-          logger.debug({ prompt: startPrompt }, 'Generated prompt for first round of inference')
+					logger.debug({ prompt: startPrompt }, 'Generated prompt for first round of inference')
 					const runResponse = async (prompt) => {
 						try {
 							const res = await openai.createChatCompletion({
@@ -338,7 +338,7 @@ async function fetchInstagramEvents() {
 							});
 							return res;
 						} catch (error) {
-              logger.error({ error: error.toString() }, 'Error running gpt');
+							logger.error({ error: error.toString() }, 'Error running gpt');
 							throw error;
 						}
 					};
@@ -420,7 +420,7 @@ async function fetchInstagramEvents() {
 			}));
 	}
 	catch (error) {
-    logger.error({ error: error.toString() }, 'Could not get OpenAI responses');
+		logger.error({ error: error.toString() }, 'Could not get OpenAI responses');
 		return await useStorage().getItem('instagramEventSources');
 	}
 
@@ -509,7 +509,7 @@ async function fetchInstagramEvents() {
 			}));
 	}
 	catch (error) {
-    logger.error({ error: error.toString() }, 'Could not parse OpenAI response');
+		logger.error({ error: error.toString() }, 'Could not parse OpenAI response');
 		return await useStorage().getItem('instagramEventSources');
 	}
 
@@ -534,7 +534,7 @@ async function fetchInstagramEvents() {
 							&& post.hasStartHourInPost === true
 							&& post.isPastEvent === false
 						) {
-              logger.debug({ post }, "Adding InstagramEvent to database");
+							logger.debug({ post }, "Adding InstagramEvent to database");
 
 							let end = DateTime.fromObject({ year: post.endYear, month: post.endMonth, day: post.startDay, hour: post.endHourMilitaryTime, minute: post.endMinute }, { zone: 'America/Los_Angeles' });
 							// Allow Luxon to automatically take care of overflow (i.e. day 32 of the month).
@@ -553,7 +553,7 @@ async function fetchInstagramEvents() {
 							});
 						}
 						else {
-              logger.debug({ post }, "Adding InstagramNonEvent to database");
+							logger.debug({ post }, "Adding InstagramNonEvent to database");
 							return await prisma.instagramNonEvent.create({
 								data: {
 									igId: post.id,
@@ -607,12 +607,12 @@ async function fetchInstagramEvents() {
 							if (!isEventFinished && isEventWithinYear) return;
 
 							// Delete from events.
-              logger.debug({ event }, 'deleting event')
+							logger.debug({ event }, 'deleting event')
 							await prisma.instagramEvent.delete({ where: { igId: event.igId } });
 						}
 						else {
 							// Delete from non-events.
-              logger.debug({ event }, 'deleting non-event')
+							logger.debug({ event }, 'deleting non-event')
 							await prisma.instagramNonEvent.delete({ where: { igId: event.igId } });
 						}
 					}
@@ -646,7 +646,7 @@ async function fetchInstagramEvents() {
 			}));
 	}
 	catch (error) {
-    logger.error({ error: error.toString() }, 'Could not update Instagram Events');
+		logger.error({ error: error.toString() }, 'Could not update Instagram Events');
 		return await useStorage().getItem('instagramEventSources');
 	}
 
@@ -672,7 +672,7 @@ async function fetchInstagramEvents() {
 			}));
 	}
 	catch (error) {
-    logger.error({ error: error.toString() }, 'Could return Instagram Events for non-updated sources');
+		logger.error({ error: error.toString() }, 'Could return Instagram Events for non-updated sources');
 		return await useStorage().getItem('instagramEventSources');
 	}
 
@@ -689,7 +689,7 @@ async function getAllInstagramOrganizers(json) {
 				.then(res => {
 					const appUsage = res.headers.get('X-App-Usage');
 					if (appUsage) {
-            logger.info({username: source.username, appUsage}, `Instagram X-App-Usage. Throttled when any reach 100(%).`);
+						logger.info({ username: source.username, appUsage }, `Instagram X-App-Usage. Throttled when any reach 100(%).`);
 					}
 					return res.json();
 				})
@@ -707,9 +707,9 @@ function setIgnoreInstagramEventsInplace(eventsFromOrganizer: InstagramEvent[]) 
 			if (Object.hasOwn(eventsFromOrganizer[i], 'title') && Object.hasOwn(eventsFromOrganizer[j], 'title')
 				&& (eventsFromOrganizer[i].title === eventsFromOrganizer[j].title ||
 					// Ignore names with the same prefix.
-				(eventsFromOrganizer[i].title.length > nameFront
-					&& eventsFromOrganizer[j].title.length > nameFront
-					&& eventsFromOrganizer[i].title.substring(0, nameFront).toLowerCase() === eventsFromOrganizer[j].title.substring(0, nameFront).toLowerCase()))
+					(eventsFromOrganizer[i].title.length > nameFront
+						&& eventsFromOrganizer[j].title.length > nameFront
+						&& eventsFromOrganizer[i].title.substring(0, nameFront).toLowerCase() === eventsFromOrganizer[j].title.substring(0, nameFront).toLowerCase()))
 			) {
 				// Add new property to event- used by FullCalendar to ignore event.
 				eventsFromOrganizer[j].display = 'none';

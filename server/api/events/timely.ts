@@ -38,7 +38,7 @@ async function fetchTimelyEvents() {
 				const response = await fetch(fetchUrl, { headers });
 
 				if (!response.ok) {
-          logger.error({ name: source.name, response }, 'Could not fetch events');
+					logger.error({ name: source.name, response }, 'Could not fetch events');
 					return {
 						events: [],
 						city: source.city,
@@ -68,7 +68,7 @@ async function fetchTimelyEvents() {
 		);
 		await useStorage().setItem('timelySources', timelySources);
 	} catch (error) {
-    logger.error({ error: error.toString() }, 'Error fetching Timely events');
+		logger.error({ error: error.toString() }, 'Error fetching Timely events');
 	}
 	return timelySources;
 };

@@ -35,7 +35,7 @@ async function fetchWithFriendsEvents() {
 				const fetchUrl = new URL(`https://withfriends.co/Movement/${source.movementId}/Incremental_Events:Display_Infinite_Scroll=1,Display_Item_Element=li,Display_Item_Classes=Event_List_Item%20wf-event%20wf-front,Display_Iterator_Element=None,Display_Increment=5,Display_Template_Alias=New_List,Display_Segment=Upcoming,Display_Property_Alias=Events,Display_Front=1,Display_Item_Type=Movement,Display_Item=${source.movementId}`);
 				const response = await fetch(fetchUrl, headers);
 				if (!response.ok) {
-          logger.error({ name: source.name, response }, 'Could not fetch events');
+					logger.error({ name: source.name, response }, 'Could not fetch events');
 					return {
 						events: [],
 						city: source.city,
@@ -50,8 +50,8 @@ async function fetchWithFriendsEvents() {
 				// Get event information.
 				const events = [...eventsHtml].map(event => {
 					let dateString = event.querySelector('[data-property="Start_Time"]')!
-							.textContent!
-							.trim()
+						.textContent!
+						.trim()
 						.replace(' at', ` ${new Date().getFullYear()}`);
 
 					// With Friends supplies events from America/Los_Angeles timezone- not the system timezone.
@@ -78,7 +78,7 @@ async function fetchWithFriendsEvents() {
 		);
 		await useStorage().setItem('withFriendsSources', withFriendsSources);
 	} catch (error) {
-    logger.error({ error: error.toString() }, 'Error fetching With Friends events');
+		logger.error({ error: error.toString() }, 'Error fetching With Friends events');
 	}
 	return withFriendsSources;
 };
