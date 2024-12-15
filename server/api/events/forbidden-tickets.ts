@@ -2,7 +2,7 @@ import eventSourcesJSON from 'public/event_sources.json';
 import { serverCacheMaxAgeSeconds, serverStaleWhileInvalidateSeconds, serverFetchHeaders } from '~~/utils/util';
 import { DateTime } from 'luxon';
 
-import { logger as mainLogger } from '../../utils/logger';
+import { logger as mainLogger } from '~~/utils/logger';
 
 const logger = mainLogger.child({ provider: 'forbidden-tickets' });
 

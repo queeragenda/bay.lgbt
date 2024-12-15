@@ -3,7 +3,7 @@ import { serverCacheMaxAgeSeconds, serverFetchHeaders, serverStaleWhileInvalidat
 import { JSDOM } from 'jsdom';
 import { DateTime } from 'luxon';
 
-import { logger as mainLogger } from '../../utils/logger';
+import { logger as mainLogger } from '~~/utils/logger';
 
 const logger = mainLogger.child({ provider: 'eventbrite' });
 

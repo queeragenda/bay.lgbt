@@ -5,7 +5,7 @@ import { serverFetchHeaders, serverStaleWhileInvalidateSeconds } from '~~/utils/
 import { InstagramEvent, PrismaClient } from '@prisma/client'
 import vision from '@google-cloud/vision';
 import { DateTime } from 'luxon';
-import { logger as mainLogger } from '../../utils/logger';
+import { logger as mainLogger } from '~~/utils/logger';
 
 const logger = mainLogger.child({ provider: 'instagram' });
 

@@ -1,7 +1,7 @@
 import eventSourcesJSON from 'public/event_sources.json';
 import { serverCacheMaxAgeSeconds, serverFetchHeaders, serverStaleWhileInvalidateSeconds } from '~~/utils/util';
 import { DateTime } from 'luxon';
-import { logger as mainLogger } from '../../utils/logger';
+import { logger as mainLogger } from '~~/utils/logger';
 
 const logger = mainLogger.child({ provider: 'wix' });
 
