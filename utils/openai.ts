@@ -137,7 +137,7 @@ export async function executePrompt(client: OpenAIApi, prompt: string) {
 			max_tokens: 500,
 		});
 		return res.data;
-	} catch (error) {
+	} catch (error: any) {
 		logger.error({ error: error.toString() }, 'Error running gpt');
 		throw error;
 	}
