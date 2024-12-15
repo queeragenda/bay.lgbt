@@ -21,12 +21,20 @@ model InstagramEventOrganizer {
   InstagramPost InstagramPost[]
 }
 
+model InstagramImage {
+  id            Int           @id @default(autoincrement())
+  url           String
+  postID        String
+  InstagramPost InstagramPost @relation(fields: [postID], references: [id])
+  data          Bytes
+}
+
 model InstagramPost {
   // Instagram Post ID, from Instagram
-  id            String @id
-  url           String
-  mediaUrlsJson String
-  caption       String
+  id      String           @id
+  url     String
+  caption String
+  images  InstagramImage[]
 
   organizer   InstagramEventOrganizer @relation(fields: [organizerId], references: [id])
   organizerId Int

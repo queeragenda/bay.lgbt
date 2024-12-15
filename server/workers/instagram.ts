@@ -1,20 +1,19 @@
 import { Queue, Worker } from "bullmq";
-import { scrapeAllInstagramEvents, fixupInstagramIngestion, scrapeInstagramEventsForUser } from "~~/utils/instagram";
+import { scrapeInstagram, fixupInstagramIngestion } from "~~/utils/instagram";
 import { connection } from "./redis";
 
 export const instagramQueue = new Queue("instagram", { connection });
 
 const worker = new Worker('instagram', async job => {
 	console.info({ job: job.id, name: job.name }, "Starting job")
+	const username = job.data.username;
+
 	switch (job.name) {
-		case 'scrape-all':
-			await scrapeAllInstagramEvents();
+		case 'scrape':
+			await scrapeInstagram(username);
 			break;
-		case 'scrape-user':
-			await scrapeInstagramEventsForUser(job.data.username);
-			break;
-		case 'fixup-ingest':
-			await fixupInstagramIngestion();
+		case 'fixup':
+			await fixupInstagramIngestion(username, job.data.postID);
 			break;
 		default:
 			console.error({ job_name: job.name }, 'Got unknown job name on instagram queue')
@@ -29,7 +28,7 @@ export async function initInstagramWorkers() {
 	// 	'scrape-every-hour',
 	// 	{ pattern: '52 * * * *' },
 	// 	{
-	// 		name: 'scrape-all',
+	// 		name: 'scrape',
 	// 		data: {
 	// 		},
 	// 	},

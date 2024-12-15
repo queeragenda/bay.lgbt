@@ -1,6 +1,8 @@
-import { InstagramEvent, InstagramEventOrganizer, InstagramPost, Prisma, PrismaClient } from "@prisma/client";
+import { InstagramEvent, InstagramEventOrganizer, InstagramImage, InstagramPost, Prisma } from "@prisma/client";
 import { Configuration, OpenAIApi } from "openai";
 import { logger as mainLogger } from './logger';
+import { prisma } from '~~/utils/db';
+
 import vision from '@google-cloud/vision';
 import { InstagramApiPost, InstagramSource } from "~~/types";
 import { DateTime } from "luxon";
@@ -20,10 +22,9 @@ if (!process.env.OPENAI_API_KEY) {
 const openai = new OpenAIApi(new Configuration({
 	apiKey: process.env.OPENAI_API_KEY,
 }));
-const prisma = new PrismaClient();
 const logger = mainLogger.child({ provider: 'instagram' });
 
-async function fetchOcrResults(urls: string[]) {
+async function fetchOcrResults(images: InstagramImage[]) {
 	if (!process.env.GOOGLE_CLOUD_VISION_PRIVATE_KEY) {
 		throw new Error('GOOGLE_CLOUD_VISION_PRIVATE_KEY not found.');
 	}
@@ -39,10 +40,12 @@ async function fetchOcrResults(urls: string[]) {
 	});
 
 	const annotationsAll = await Promise.all(
-		urls.map(async (url) => {
-			const [result] = await client.textDetection(url);
+		images.map(async (image) => {
+			const [result] = await client.textDetection(image.data);
 			const annotations = (result.textAnnotations && result.textAnnotations.length > 0) ?
-				result.fullTextAnnotation.text : '';
+				result.fullTextAnnotation?.text || '' : '';
+
+			logger.debug({ url: image.url, imageID: image.id, postID: image.postID, result, annotations }, 'Executed OCR on image');
 			return annotations;
 		}));
 
@@ -84,8 +87,8 @@ async function fetchPosts(organizer: InstagramEventOrganizer): Promise<Instagram
 	return responseBody.business_discovery.media.data;
 }
 
-async function extractEventFromPost(organizer: InstagramEventOrganizer, post: InstagramPost): Promise<InstagramEvent | null> {
-	const imageText = await extractTextFromPostImages(post);
+async function extractEventFromPost(organizer: InstagramEventOrganizer, post: InstagramPost, images: InstagramImage[]): Promise<InstagramEvent | null> {
+	const imageText = await extractTextFromPostImages(post, images);
 
 	const inference = await runInferenceOnPost(organizer, post, imageText);
 	if (!inference) {
@@ -106,29 +109,51 @@ async function persistEvent(inference: OpenAiInstagramResult, post: InstagramPos
 		&& inference.hasStartHourInPost === true
 		&& inference.isPastEvent === false
 	) {
-		let end = DateTime.fromObject({ year: inference.endYear, month: inference.endMonth, day: inference.startDay, hour: inference.endHourMilitaryTime, minute: inference.endMinute }, { zone: 'America/Los_Angeles' });
+		let end = DateTime.fromObject(
+			{
+				year: inference.endYear || undefined,
+				month: inference.endMonth || undefined,
+				day: inference.startDay,
+				hour: inference.endHourMilitaryTime,
+				minute: inference.endMinute
+			},
+			{ zone: 'America/Los_Angeles' },
+		);
 		// Allow Luxon to automatically take care of overflow (i.e. day 32 of the month).
 		end = end.plus({ days: inference.endDay - inference.startDay });
 
-		await prisma.instagramEvent.create({
+		const start = DateTime.fromObject(
+			{
+				year: inference.startYear || undefined,
+				month: inference.startMonth || undefined,
+				day: inference.startDay,
+				hour: inference.startHourMilitaryTime,
+				minute: inference.startMinute
+			},
+			{ zone: 'America/Los_Angeles' }
+		);
+
+		const event = await prisma.instagramEvent.create({
 			data: {
 				postID: post.id,
-				start: DateTime.fromObject({ year: inference.startYear, month: inference.startMonth, day: inference.startDay, hour: inference.startHourMilitaryTime, minute: inference.startMinute }, { zone: 'America/Los_Angeles' }).toUTC().toJSDate(),
+				start: start.toUTC().toJSDate(),
 				end: end.toUTC().toJSDate(),
-				// start: new Date(Date.UTC(post.startYear, post.startMonth - 1, post.startDay, post.startHourMilitaryTime + PST_OFFSET)),
-				// end: new Date(Date.UTC(post.endYear, post.endMonth - 1, post.endDay, post.endHourMilitaryTime + PST_OFFSET)),
 				url: post.url,
 				title: `${inference.title} @ ${organizer.username}`,
 				organizerId: post.organizerId
 			}
 		});
 
+		logger.debug({ postID: event.postID, eventTitle: event.title }, 'Persisted event to database');
+
 		await prisma.instagramPost.update({
 			where: { id: post.id },
 			data: {
 				completedAt: new Date(),
 			}
-		})
+		});
+
+		return event;
 	}
 
 	return null;
@@ -194,9 +219,9 @@ function postProcessOpenAiInstagramResponse(generatedJson: string): OpenAiInstag
 	return object;
 }
 
-async function runInferenceOnPost(organizer: InstagramEventOrganizer, apiPost: InstagramApiPost, ocrResult: string | null): Promise<OpenAiInstagramResult | null> {
-	const initialPrompt = instagramInitialPrompt(organizer, apiPost, ocrResult);
-	logger.debug({ prompt: initialPrompt }, 'Generated prompt for first round of inference')
+async function runInferenceOnPost(organizer: InstagramEventOrganizer, post: InstagramPost, ocrResult: string | null): Promise<OpenAiInstagramResult | null> {
+	const initialPrompt = instagramInitialPrompt(organizer, post, ocrResult);
+	logger.debug({ prompt: initialPrompt, organizer: organizer.username, postUrl: post.url }, 'Generated prompt for first round of inference')
 
 	const initialResponse = await executePrompt(openai, initialPrompt);
 	const generatedJson = initialResponse.choices[0].message?.content;
@@ -206,7 +231,11 @@ async function runInferenceOnPost(organizer: InstagramEventOrganizer, apiPost: I
 
 	// Todo: run verification prompt
 
-	return postProcessOpenAiInstagramResponse(generatedJson);
+	const result = postProcessOpenAiInstagramResponse(generatedJson);
+
+	logger.debug({ organizer: organizer.username, postUrl: post.url, result }, 'Performed inference on post')
+
+	return result;
 }
 
 function getMediaUrls(post: InstagramApiPost): string[] | null {
@@ -233,13 +262,11 @@ function getMediaUrls(post: InstagramApiPost): string[] | null {
 	}
 }
 
-async function extractTextFromPostImages(post: InstagramPost): Promise<string | null> {
-	const mediaUrls: string[] | null = JSON.parse(post.mediaUrlsJson);
-	if (!mediaUrls) {
-		return null;
-	}
+async function extractTextFromPostImages(post: InstagramPost, images: InstagramImage[]): Promise<string | null> {
+	const text = await fetchOcrResults(images);
+	logger.debug({ text, postID: post.id, postURL: post.url }, 'Performed OCR text extraction on post');
 
-	return await fetchOcrResults(mediaUrls);
+	return text;
 }
 
 async function getOrInsertOrganizer(source: InstagramSource): Promise<InstagramEventOrganizer> {
@@ -276,9 +303,8 @@ async function persistPostNoneIfPresent(organizer: InstagramEventOrganizer, post
 				id: post.id,
 				url: post.permalink,
 				organizerId: organizer.id,
-				caption: post.caption,
+				caption: post.caption || '',
 				postDate: new Date(post.timestamp),
-				mediaUrlsJson: mediaUrls,
 			}
 		});
 	} catch (e) {
@@ -306,12 +332,38 @@ async function handleInstagramPost(organizer: InstagramEventOrganizer, apiPost: 
 		return null;
 	}
 
-	const maybeEvent = await extractEventFromPost(organizer, dbPost);
+	const mediaUrls = getMediaUrls(apiPost);
+
+	const images = mediaUrls ? await fetchAndPersistImages(dbPost, mediaUrls) : [];
+
+	const maybeEvent = await extractEventFromPost(organizer, dbPost, images);
 	if (!maybeEvent) {
 		return null;
 	}
 
 	return maybeEvent;
+}
+
+async function fetchAndPersistImages(post: InstagramPost, mediaUrls: string[]): Promise<InstagramImage[]> {
+	return await Promise.all(mediaUrls.map(url => fetchAndPersistImage(post, url)));
+}
+
+async function fetchAndPersistImage(post: InstagramPost, url: string): Promise<InstagramImage> {
+	const maybeImage = await prisma.instagramImage.findFirst({ where: { url } });
+	if (maybeImage) {
+		return maybeImage;
+	}
+
+	const response = await fetch(url);
+	const data = await response.arrayBuffer();
+
+	return prisma.instagramImage.create({
+		data: {
+			url,
+			postID: post.id,
+			data: Buffer.from(data),
+		}
+	})
 }
 
 async function ingestEventsForOrganizer(organizer: InstagramEventOrganizer): Promise<InstagramEvent[]> {
@@ -327,35 +379,21 @@ async function ingestEventsForOrganizer(organizer: InstagramEventOrganizer): Pro
 			}
 		}
 
+		await prisma.instagramEventOrganizer.update({ where: { id: organizer.id }, data: { lastUpdated: new Date() } })
+
 		return events;
-	} catch (e) {
+	} catch (e: any) {
 		logger.error({ error: e.toString(), organizer: organizer.username }, 'error ingesting for organizer')
 		return [];
 	}
 }
 
-export async function scrapeInstagramEventsForUser(username: string) {
-	logger.info({ username, }, 'Starting Instagram data ingestion for user');
-	const sources: InstagramSource[] = eventSourcesJSON.instagram;
-
-	const filtered = sources.filter(source => source.username === username);
-	if (!filtered) {
-		throw new Error(`No Instagram account "${username}"`)
+export async function scrapeInstagram(username: string | undefined) {
+	logger.info({ username }, 'Starting Instagram data ingestion');
+	let sources: InstagramSource[] = eventSourcesJSON.instagram;
+	if (username) {
+		sources = sources.filter(source => source.username === username);
 	}
-
-	const source = filtered[0];
-
-	const organizer = await getOrInsertOrganizer(source);
-	const events = await ingestEventsForOrganizer(organizer);
-
-	logger.info({ eventCount: events.length, username, }, 'Completed Instagram data ingestion');
-}
-
-
-export async function scrapeAllInstagramEvents() {
-	logger.info('Starting Instagram data ingestion');
-	// TODO: FIX THIS LINE SO WE SCRAPE THEM ALL!!
-	const sources: InstagramSource[] = eventSourcesJSON.instagram;
 
 	const countsBySource = await Promise.all(sources.map(async source => {
 		const organizer = await getOrInsertOrganizer(source);
@@ -364,17 +402,42 @@ export async function scrapeAllInstagramEvents() {
 		return { source, eventCount: events.length };
 	}));
 
-	logger.info({ countsBySource }, 'Completed Instagram data ingestion');
+	logger.info({ countsBySource, username }, 'Completed Instagram data ingestion');
 }
 
-export async function fixupInstagramIngestion() {
-	const incomplete = await findPosts({
-		completedAt: null,
+export async function fixupInstagramIngestion(username: string | undefined, postID: string | undefined) {
+	let extraCriteria = {};
+	if (username) {
+		extraCriteria = { organizer: { username } };
+	}
+	if (postID) {
+		extraCriteria = { id: postID };
+	}
+
+	const incompletePosts = await prisma.instagramPost.findMany({
+		where: {
+			completedAt: null,
+			InstagramEvent: null,
+			...extraCriteria,
+		},
+		include: {
+			organizer: true,
+			InstagramEvent: true,
+			images: true,
+		},
+
 	});
 
-	Promise.all(Object.values(incomplete).map(async ({ organization, posts }: { organization: InstagramEventOrganizer, posts: InstagramPost[] }) => {
-		await Promise.all(posts.map(post => extractEventFromPost(organization, post)));
+	logger.debug({ incompletePosts, username }, 'Fixing up posts');
+
+	let eventCount = 0;
+	await Promise.all(incompletePosts.map(async post => {
+		if (await extractEventFromPost(post.organizer, post, post.images)) {
+			eventCount += 1;
+		}
 	}));
+
+	logger.info({ posts: incompletePosts.length, events: eventCount }, 'Completed post fixup process')
 }
 
 export interface FoundEvents {
@@ -383,21 +446,6 @@ export interface FoundEvents {
 
 export interface FoundPosts {
 	[organization_id: number]: { organization: InstagramEventOrganizer, posts: InstagramPost[] }
-}
-
-export async function findEvents(eventsWhere: any): Promise<FoundEvents> {
-	const events = await prisma.instagramEvent.findMany({ where: eventsWhere });
-	const organizers = await prisma.instagramEventOrganizer.findMany();
-	const organizersById: FoundEvents = {};
-	for (let organization of organizers) {
-		organizersById[organization.id] = { organization, events: [] };
-	}
-
-	for (let event of events) {
-		organizersById[event.organizerId].events.push(event);
-	}
-
-	return organizersById;
 }
 
 export async function findPosts(eventsWhere: any): Promise<FoundPosts> {

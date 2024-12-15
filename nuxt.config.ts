@@ -27,9 +27,11 @@ export default defineNuxtConfig({
 			throwError: false // optional,
 		},
 		allowedMethodsRestricter: {
-			value: ['GET'],
+			value: [
+				'GET',
+				// 'POST', // To resolve HTTP 405 errors and allow POST requests to hit the scrape endpoints (at time of writing this would allow anyone to trigger an Instagram scrape, using API rate limit time!), uncomment this line
+			],
 			route: '',
-			throwError: false, // optional
 		},
 		corsHandler: {
 			value: {
