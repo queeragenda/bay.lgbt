@@ -24,6 +24,7 @@
     "@types/passport": "^1.0.12",
     "@types/passport-facebook": "^2.1.11",
     "@vercel/analytics": "^0.1.9",
+    "bullmq": "^5.34.2",
     "h3": "^1.6.2",
     "ical.js": "^1.5.0",
     "jquery": "^3.6.3",

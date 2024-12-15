@@ -11,18 +11,35 @@ datasource db {
 }
 
 model InstagramEventOrganizer {
-  id           Int                 @id @default(autoincrement())
-  username     String              @unique
-  city         String
-  contextClues String
-  events       InstagramEvent[]
-  nonEvents    InstagramNonEvent[]
-  createdAt    DateTime            @default(now())
-  lastUpdated  DateTime            @default(now())
+  id            Int              @id @default(autoincrement())
+  username      String           @unique
+  city          String
+  contextClues  String
+  events        InstagramEvent[]
+  createdAt     DateTime         @default(now())
+  lastUpdated   DateTime         @default(now())
+  InstagramPost InstagramPost[]
+}
+
+model InstagramPost {
+  // Instagram Post ID, from Instagram
+  id          String                  @id
+  url         String
+  organizer   InstagramEventOrganizer @relation(fields: [organizerId], references: [id])
+  organizerId Int
+  postDate    DateTime // The time the post was posted to Instagram
+  createdAt   DateTime                @default(now()) // The time that we first saw this post in our scraping
+  completedAt DateTime? // Timestamp we finished the extraction job, null if not completed
+
+  // These fields will only (maybe) be present after the ingestion job is completed
+  extractedText  String?
+  caption        String?
+  InstagramEvent InstagramEvent?
 }
 
 model InstagramEvent {
-  igId        String                  @id
+  // Instagram Post ID, from Instagram
+  postID      String                  @id
   title       String
   start       DateTime
   end         DateTime
@@ -30,15 +47,7 @@ model InstagramEvent {
   organizer   InstagramEventOrganizer @relation(fields: [organizerId], references: [id])
   organizerId Int
   createdAt   DateTime                @default(now())
-
-  @@index([organizerId])
-}
-
-model InstagramNonEvent {
-  igId        String                  @id
-  organizer   InstagramEventOrganizer @relation(fields: [organizerId], references: [id])
-  organizerId Int
-  createdAt   DateTime                @default(now())
+  post        InstagramPost           @relation(fields: [postID], references: [id])
 
   @@index([organizerId])
 }
