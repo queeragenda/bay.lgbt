@@ -23,17 +23,17 @@ model InstagramEventOrganizer {
 
 model InstagramPost {
   // Instagram Post ID, from Instagram
-  id          String                  @id
-  url         String
+  id            String @id
+  url           String
+  mediaUrlsJson String
+  caption       String
+
   organizer   InstagramEventOrganizer @relation(fields: [organizerId], references: [id])
   organizerId Int
   postDate    DateTime // The time the post was posted to Instagram
   createdAt   DateTime                @default(now()) // The time that we first saw this post in our scraping
   completedAt DateTime? // Timestamp we finished the extraction job, null if not completed
 
-  // These fields will only (maybe) be present after the ingestion job is completed
-  extractedText  String?
-  caption        String?
   InstagramEvent InstagramEvent?
 }
 

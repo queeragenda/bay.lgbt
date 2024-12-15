@@ -84,18 +84,18 @@ async function fetchPosts(organizer: InstagramEventOrganizer): Promise<Instagram
 	return responseBody.business_discovery.media.data;
 }
 
-async function extractEventFromPost(organizer: InstagramEventOrganizer, apiPost: InstagramApiPost, dbPost: InstagramPost): Promise<InstagramEvent | null> {
-	const imageText = await extractTextFromPostImages(apiPost);
+async function extractEventFromPost(organizer: InstagramEventOrganizer, post: InstagramPost): Promise<InstagramEvent | null> {
+	const imageText = await extractTextFromPostImages(post);
 
-	const inference = await runInferenceOnPost(organizer, apiPost, imageText);
+	const inference = await runInferenceOnPost(organizer, post, imageText);
 	if (!inference) {
 		return null;
 	}
 
-	return await insertEvent(inference, dbPost, organizer);
+	return await persistEvent(inference, post, organizer);
 }
 
-async function insertEvent(inference: OpenAiInstagramResult, dbPost: InstagramPost, organizer: InstagramEventOrganizer): Promise<InstagramEvent | null> {
+async function persistEvent(inference: OpenAiInstagramResult, post: InstagramPost, organizer: InstagramEventOrganizer): Promise<InstagramEvent | null> {
 	if (inference.isEvent === true
 		&& inference.startDay !== null
 		&& inference.startHourMilitaryTime !== null
@@ -110,18 +110,25 @@ async function insertEvent(inference: OpenAiInstagramResult, dbPost: InstagramPo
 		// Allow Luxon to automatically take care of overflow (i.e. day 32 of the month).
 		end = end.plus({ days: inference.endDay - inference.startDay });
 
-		return await prisma.instagramEvent.create({
+		await prisma.instagramEvent.create({
 			data: {
-				postID: dbPost.id,
+				postID: post.id,
 				start: DateTime.fromObject({ year: inference.startYear, month: inference.startMonth, day: inference.startDay, hour: inference.startHourMilitaryTime, minute: inference.startMinute }, { zone: 'America/Los_Angeles' }).toUTC().toJSDate(),
 				end: end.toUTC().toJSDate(),
 				// start: new Date(Date.UTC(post.startYear, post.startMonth - 1, post.startDay, post.startHourMilitaryTime + PST_OFFSET)),
 				// end: new Date(Date.UTC(post.endYear, post.endMonth - 1, post.endDay, post.endHourMilitaryTime + PST_OFFSET)),
-				url: dbPost.url,
+				url: post.url,
 				title: `${inference.title} @ ${organizer.username}`,
-				organizerId: dbPost.organizerId
+				organizerId: post.organizerId
 			}
 		});
+
+		await prisma.instagramPost.update({
+			where: { id: post.id },
+			data: {
+				completedAt: new Date(),
+			}
+		})
 	}
 
 	return null;
@@ -202,21 +209,20 @@ async function runInferenceOnPost(organizer: InstagramEventOrganizer, apiPost: I
 	return postProcessOpenAiInstagramResponse(generatedJson);
 }
 
-async function extractTextFromPostImages(post: InstagramApiPost): Promise<string | null> {
-	let mediaLinks: string[] = [];
+function getMediaUrls(post: InstagramApiPost): string[] | null {
 	switch (post.media_type) {
 		case 'IMAGE':
 			// May be omitted for legal reasons.
 			if (post.media_url) {
-				mediaLinks = [post.media_url];
+				return [post.media_url];
 			}
-			break;
+
+			return null;
 		case 'CAROUSEL_ALBUM':
-			mediaLinks = (post.children || { data: [] }).data
+			return (post.children || { data: [] }).data
 				.map((child) => child.media_url)
 				// Keep only if defined, since it may be omitted.
 				.filter((mediaUrl) => mediaUrl);
-			break;
 		case 'VIDEO':
 			// TODO: We can OCR the thumbnail_url, but due to a bug on Instagram's end we cannot access the `thumbnail_url` field.
 			// See https://developers.facebook.com/support/bugs/3431232597133817/?join_id=fa03b2657f7a9c for updates.
@@ -225,8 +231,15 @@ async function extractTextFromPostImages(post: InstagramApiPost): Promise<string
 			logger.error({ event: post }, `Unknown media type: ${post.media_type}`);
 			return null;
 	}
+}
 
-	return await fetchOcrResults(mediaLinks);
+async function extractTextFromPostImages(post: InstagramPost): Promise<string | null> {
+	const mediaUrls: string[] | null = JSON.parse(post.mediaUrlsJson);
+	if (!mediaUrls) {
+		return null;
+	}
+
+	return await fetchOcrResults(mediaUrls);
 }
 
 async function getOrInsertOrganizer(source: InstagramSource): Promise<InstagramEventOrganizer> {
@@ -255,6 +268,8 @@ type PostResponse = {
 * Stores the post from the IG API in the database returning the model, returns `null` if the post already existed
 */
 async function persistPostNoneIfPresent(organizer: InstagramEventOrganizer, post: InstagramApiPost): Promise<InstagramPost | null> {
+	const mediaUrls = JSON.stringify(getMediaUrls(post));
+
 	try {
 		return await prisma.instagramPost.create({
 			data: {
@@ -263,6 +278,7 @@ async function persistPostNoneIfPresent(organizer: InstagramEventOrganizer, post
 				organizerId: organizer.id,
 				caption: post.caption,
 				postDate: new Date(post.timestamp),
+				mediaUrlsJson: mediaUrls,
 			}
 		});
 	} catch (e) {
@@ -290,7 +306,7 @@ async function handleInstagramPost(organizer: InstagramEventOrganizer, apiPost: 
 		return null;
 	}
 
-	const maybeEvent = await extractEventFromPost(organizer, apiPost, dbPost);
+	const maybeEvent = await extractEventFromPost(organizer, dbPost);
 	if (!maybeEvent) {
 		return null;
 	}
@@ -302,9 +318,16 @@ async function ingestEventsForOrganizer(organizer: InstagramEventOrganizer): Pro
 	try {
 		const posts = await fetchPosts(organizer);
 
-		const postsAndNulls = await Promise.all(posts.map(post => handleInstagramPost(organizer, post)));
+		const maybeEvents = await Promise.all(posts.map(post => handleInstagramPost(organizer, post)));
 
-		return postsAndNulls.filter(x => x !== null);
+		const events: InstagramEvent[] = [];
+		for (let maybeEvent of maybeEvents) {
+			if (maybeEvent) {
+				events.push(maybeEvent);
+			}
+		}
+
+		return events;
 	} catch (e) {
 		logger.error({ error: e.toString(), organizer: organizer.username }, 'error ingesting for organizer')
 		return [];
@@ -312,7 +335,7 @@ async function ingestEventsForOrganizer(organizer: InstagramEventOrganizer): Pro
 }
 
 export async function scrapeInstagramEventsForUser(username: string) {
-	logger.info({  username, }, 'Starting Instagram data ingestion for user');
+	logger.info({ username, }, 'Starting Instagram data ingestion for user');
 	const sources: InstagramSource[] = eventSourcesJSON.instagram;
 
 	const filtered = sources.filter(source => source.username === username);
@@ -345,14 +368,21 @@ export async function scrapeAllInstagramEvents() {
 }
 
 export async function fixupInstagramIngestion() {
-	const inconpleteEvents = await findEvents({
+	const incomplete = await findPosts({
 		completedAt: null,
 	});
+
+	Promise.all(Object.values(incomplete).map(async ({ organization, posts }: { organization: InstagramEventOrganizer, posts: InstagramPost[] }) => {
+		await Promise.all(posts.map(post => extractEventFromPost(organization, post)));
+	}));
 }
 
 export interface FoundEvents {
 	[organization_id: number]: { organization: InstagramEventOrganizer, events: InstagramEvent[] }
+}
 
+export interface FoundPosts {
+	[organization_id: number]: { organization: InstagramEventOrganizer, posts: InstagramPost[] }
 }
 
 export async function findEvents(eventsWhere: any): Promise<FoundEvents> {
@@ -365,6 +395,21 @@ export async function findEvents(eventsWhere: any): Promise<FoundEvents> {
 
 	for (let event of events) {
 		organizersById[event.organizerId].events.push(event);
+	}
+
+	return organizersById;
+}
+
+export async function findPosts(eventsWhere: any): Promise<FoundPosts> {
+	const posts = await prisma.instagramPost.findMany({ where: eventsWhere });
+	const organizers = await prisma.instagramEventOrganizer.findMany();
+	const organizersById: FoundPosts = {};
+	for (let organization of organizers) {
+		organizersById[organization.id] = { organization, posts: [] };
+	}
+
+	for (let post of posts) {
+		organizersById[post.organizerId].posts.push(post);
 	}
 
 	return organizersById;
