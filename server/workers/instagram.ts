@@ -21,7 +21,7 @@ const worker = new Worker('instagram', async job => {
 export async function initInstagramWorkers() {
 	const scheduler = await queue.upsertJobScheduler(
 		'scrape-every-hour',
-		{ pattern: '46 * * * *' },
+		{ pattern: '52 * * * *' },
 		{
 			name: 'scrape-all',
 			data: {
