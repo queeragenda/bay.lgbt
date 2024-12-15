@@ -1,13 +1,12 @@
 import { InstagramEvent, InstagramEventOrganizer, InstagramImage, InstagramPost, Prisma } from "@prisma/client";
 import { Configuration, OpenAIApi } from "openai";
-import { logger as mainLogger } from './logger';
-import { prisma } from '~~/utils/db';
-
 import vision from '@google-cloud/vision';
-import { InstagramApiPost, InstagramSource } from "~~/types";
 import { DateTime } from "luxon";
 import { OpenAiInstagramResult, instagramInitialPrompt, executePrompt } from "./openai";
-import eventSourcesJSON from 'public/event_sources.json';
+
+import { prisma } from '~~/utils/db';
+import { logger as mainLogger } from './logger';
+import { InstagramApiPost, InstagramSource } from "~~/types";
 
 if (!process.env.INSTAGRAM_BUSINESS_USER_ID) {
 	throw new Error('INSTAGRAM_BUSINESS_USER_ID not found.');
@@ -269,7 +268,7 @@ async function extractTextFromPostImages(post: InstagramPost, images: InstagramI
 	return text;
 }
 
-async function getOrInsertOrganizer(source: InstagramSource): Promise<InstagramEventOrganizer> {
+export async function getOrInsertOrganizer(source: InstagramSource): Promise<InstagramEventOrganizer> {
 	const organizer = await prisma.instagramEventOrganizer.findUnique({ where: { username: source.username } });
 	if (organizer) {
 		return organizer;
@@ -379,7 +378,7 @@ async function ingestEventsForOrganizer(organizer: InstagramEventOrganizer): Pro
 			}
 		}
 
-		await prisma.instagramEventOrganizer.update({ where: { id: organizer.id }, data: { lastUpdated: new Date() } })
+		await prisma.instagramEventOrganizer.update({ where: { id: organizer.id }, data: { lastUpdated: new Date() } });
 
 		return events;
 	} catch (e: any) {
@@ -388,30 +387,53 @@ async function ingestEventsForOrganizer(organizer: InstagramEventOrganizer): Pro
 	}
 }
 
-export async function scrapeInstagram(username: string | undefined) {
-	logger.info({ username }, 'Starting Instagram data ingestion');
-	let sources: InstagramSource[] = eventSourcesJSON.instagram;
-	if (username) {
-		sources = sources.filter(source => source.username === username);
-	}
+export interface ScrapeOptions {
+	username?: string,
 
-	const countsBySource = await Promise.all(sources.map(async source => {
-		const organizer = await getOrInsertOrganizer(source);
-		const events = await ingestEventsForOrganizer(organizer);
-
-		return { source, eventCount: events.length };
-	}));
-
-	logger.info({ countsBySource, username }, 'Completed Instagram data ingestion');
+	// Will only run the scrape for organizers that have not been updated since before the given time
+	onlyUpdateStalerThan?: DateTime,
 }
 
-export async function fixupInstagramIngestion(username: string | undefined, postID: string | undefined) {
-	let extraCriteria = {};
-	if (username) {
-		extraCriteria = { organizer: { username } };
+export async function scrapeInstagram(opts?: ScrapeOptions) {
+	logger.info({ opts }, 'Starting Instagram data ingestion');
+
+	let lastUpdated;
+	if (opts?.onlyUpdateStalerThan) {
+		lastUpdated = {
+			lte: opts.onlyUpdateStalerThan.toJSDate(),
+		};
 	}
-	if (postID) {
-		extraCriteria = { id: postID };
+
+	let organizers = await prisma.instagramEventOrganizer.findMany({
+		where: {
+			username: opts?.username,
+			lastUpdated,
+		}
+	})
+
+	const countsByOrganizer = await Promise.all(organizers.map(async organizer => {
+		const events = await ingestEventsForOrganizer(organizer);
+
+		return { organizer, eventCount: events.length };
+	}));
+
+	logger.info({ countsByOrganizer, opts }, 'Completed Instagram data ingestion');
+
+	return countsByOrganizer;
+}
+
+export interface FixupOptions {
+	username?: string,
+	postID?: string,
+}
+
+export async function fixupInstagramIngestion(opts?: FixupOptions) {
+	const extraCriteria: any = {};
+	if (opts?.username) {
+		extraCriteria.organizer = { username: opts.username };
+	}
+	if (opts?.postID) {
+		extraCriteria.id = opts.postID;
 	}
 
 	const incompletePosts = await prisma.instagramPost.findMany({
@@ -425,10 +447,9 @@ export async function fixupInstagramIngestion(username: string | undefined, post
 			InstagramEvent: true,
 			images: true,
 		},
-
 	});
 
-	logger.debug({ incompletePosts, username }, 'Fixing up posts');
+	logger.debug({ incompletePosts, opts }, 'Fixing up posts');
 
 	let eventCount = 0;
 	await Promise.all(incompletePosts.map(async post => {
@@ -437,7 +458,10 @@ export async function fixupInstagramIngestion(username: string | undefined, post
 		}
 	}));
 
-	logger.info({ posts: incompletePosts.length, events: eventCount }, 'Completed post fixup process')
+	return {
+		posts: incompletePosts.length,
+		events: eventCount,
+	};
 }
 
 export interface FoundEvents {

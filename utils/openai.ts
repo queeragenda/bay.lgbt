@@ -1,6 +1,6 @@
 import { InstagramEventOrganizer, InstagramPost } from "@prisma/client";
 import { OpenAIApi } from "openai";
-import { InstagramApiPost, InstagramSource } from "~~/types";
+import { logger } from "./logger";
 
 export interface OpenAiInstagramResult {
 	isEvent: boolean;

@@ -1,4 +1,3 @@
-import { instagramQueue } from "~~/server/workers/instagram"
 import { prisma } from "~~/utils/db";
 
 export default defineEventHandler(async event => {

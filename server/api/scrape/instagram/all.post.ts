@@ -1,9 +1,9 @@
-import { instagramQueue } from "~~/server/workers/instagram"
+import { scrapeInstagram } from "~~/utils/instagram";
 
 export default defineEventHandler(async event => {
-	const job = await instagramQueue.add('scrape', {});
+	const eventCounts = await scrapeInstagram();
 
-	return { job: job.id }
+	return eventCounts;
 });
 
 // TODO: require scrape token to be present for all /scrape endpoints

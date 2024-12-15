@@ -1,10 +1,9 @@
-import { instagramQueue } from "~~/server/workers/instagram"
+import { scrapeInstagram } from "~~/utils/instagram";
 
 export default defineEventHandler(async event => {
 	const username = getRouterParam(event, 'username')
 
-	const job = await instagramQueue.add('scrape', { username });
-	console.info({ username, job: job.id }, 'queuing job for user-specific instagram scraping');
+	const eventCounts = await scrapeInstagram({ username });
 
-	return { job: job.id };
+	return eventCounts;
 });
