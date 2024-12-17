@@ -9,9 +9,9 @@ export default defineEventHandler(async event => {
 		});
 	}
 
-	const image = await prisma.instagramImage.findFirst({ where: { id: imageID } });
+	const image = await prisma.urlEventImage.findFirst({ where: { id: imageID } });
 	if (image) {
-		event.node.res.setHeader('Content-Type', 'image/jpeg');
+		event.node.res.setHeader('Content-Type', image.contentType);
 		return image.data;
 	}
 });

@@ -3,7 +3,6 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
-import json from 'public/event_sources.json';
 import $ from 'jquery';
 import { DateTime } from 'luxon';
 
@@ -11,7 +10,6 @@ import 'assets/style.css';
 import FullCalendar from '@fullcalendar/vue3'
 import { ModalsContainer, useModal } from 'vue-final-modal'
 import FilterModal from './FilterModal.vue'
-import { clientCacheMaxAgeSeconds, clientStaleWhileInvalidateSeconds } from '~~/utils/util';
 
 interface County {
   enabled: any;
@@ -143,8 +141,8 @@ if (process.client) pageWidth.value = window.innerWidth;
 
 const isUsingDayMaxEventRows = useState('isUsingDayMaxEventRows', () => true);
 
-const updateWeekNumbers = () => { 
-  return getWindowWidth() < 350 ? false : true 
+const updateWeekNumbers = () => {
+  return getWindowWidth() < 350 ? false : true
 };
 // -1 indicates that there is no limit.
 const updateDayMaxEventRows = () => { return isUsingDayMaxEventRows.value ? -1 : Math.floor(getWindowHeight() / 75) };
@@ -258,23 +256,14 @@ function moveListViewScrollbarToTodayAndColor() {
 
 async function getEventSources() {
   const endpoints = [
-    '/api/events/eventbrite',
-    '/api/events/forbidden-tickets',
+    '/api/events/events',
     '/api/events/instagram',
-    '/api/events/google-calendar',
-    '/api/events/squarespace',
-    '/api/events/tockify',
-    '/api/events/with-friends',
-    '/api/events/wordpress-tribe',
-    '/api/events/timely',
-    '/api/events/wix',
   ];
-  const clientHeaders = {
-    'Cache-Control': `max-age=${clientCacheMaxAgeSeconds}, stale-while-revalidate=${clientStaleWhileInvalidateSeconds}`,
-  };
+
+  // TODO: figure out a real caching system
   // This is to preventing the UI changes from each fetch result to cause more fetches to occur.,
   Promise.allSettled(endpoints.map(async (endpoint) => {
-    const { data: response } = await useLazyFetch(endpoint, { headers: clientHeaders });
+    const { data: response } = await useFetch(endpoint);
     return addEventSources(transformEventSourcesResponse(response));
   }));
 }
@@ -285,7 +274,7 @@ getEventSources();
 if (process.client)
   setTimeout(moveListViewScrollbarToTodayAndColor, 0);
 
-onMounted(() => { 
+onMounted(() => {
   window.addEventListener("resize", updateCalendarHeight);
   moveListViewScrollbarToTodayAndColor();
 });
@@ -307,7 +296,7 @@ function addEventSources(newEventSources: EventNormalSource[] | EventGoogleCalen
     eventSource.events.forEach((event) => {
       /* REMOVED TEMPORARILY, replaced with the hack below: Remove events that last longer than 3 days.
       Note: This also tends to cut out Eventbrite events that have 'Multiple Dates' over a range of 3 days.
-      Using the official Eventbrite API would allow us to avoid this issue, but would potentially run into 
+      Using the official Eventbrite API would allow us to avoid this issue, but would potentially run into
       rate limits pretty quickly during peak hours. */
       const lengthInDays = Math.round((event.end.getTime() - event.start.getTime()) / (1000 * 3600 * 24));
 
@@ -317,7 +306,7 @@ function addEventSources(newEventSources: EventNormalSource[] | EventGoogleCalen
       else {
         // Split the event into multiple day-long events.
         // for (let i = 0; i < lengthInDays; i++) {
-          // Temporarily just split into the first day and last day. TODO: Change this to split into individual days.
+        // Temporarily just split into the first day and last day. TODO: Change this to split into individual days.
         for (let i = 0; i < lengthInDays; i += lengthInDays - 1) {
 
           let currentDayStart = DateTime.fromJSDate(event.start, { zone: 'utc' });
@@ -376,7 +365,6 @@ function isDisplayingBasedOnFilterSettings(city: string) {
   return 'auto';
 }
 
-const eventSourcesFromFile = json;
 const transformEventSourcesResponse = (eventSources) => {
   const eventsSourcesWithoutProxy = toRaw(eventSources.value.body)
   if (!eventsSourcesWithoutProxy || eventsSourcesWithoutProxy.length < 1) return [];
@@ -396,19 +384,6 @@ const transformEventSourcesResponse = (eventSources) => {
     }
   })
   return datesAdded;
-}
-
-async function loadGoogleCalendarEvents() {
-  // Note: Google Calendar has integration with FullCalendar, which allows us to avoid calling it on the server, at
-  // the cost of some waterfalling (but it's minimal since the API is fast).
-  const googleCalendarSources = eventSourcesFromFile.googleCalendar.map((source) => {
-    return {
-      googleCalendarId: source.googleCalendarId,
-      display: isDisplayingBasedOnFilterSettings(source.city),
-      city: source.city
-    } as EventGoogleCalendarSource
-  });
-  addEventSources(googleCalendarSources);
 }
 
 function setCityIsEnabled(settingId, vueRef, value) {
@@ -456,7 +431,8 @@ function updateCityIsEnabledSetting(newIsEnabled: boolean, cityId: string) {
     <div style="display: flex; flex-direction:column; position:relative;">
       <div class="title">bay.lgbt</div>
       <div style="display:flex; flex-direction: column; align-items: center;">
-        <div class="blurb">A communal board for LGBT events all around SF bay, updated 25/7! Seeking co-maintainers ❤️</div>
+        <div class="blurb">A communal board for LGBT events all around SF bay, updated 25/7! Seeking co-maintainers ❤️
+        </div>
       </div>
     </div>
     <FullCalendar :options='calendarOptions' />
@@ -464,7 +440,8 @@ function updateCityIsEnabledSetting(newIsEnabled: boolean, cityId: string) {
       <div class="desc">
         <p>bay.lgbt was built with the personal hope that no LGBTQ+ person should be without community. The site will
           always be free, without frills, and remain a public utility. The events here are drawn from various <a
-            href="https://github.com/ivyraine/bay.lgbt/blob/main/public/event_sources.json">organizer listings</a> that
+            href="https://github.com/ivyraine/bay.lgbt/blob/main/server/utils/event_sources.json">organizer listings</a>
+          that
           contributors (thank you!) have provided. The listings are in a constant state of community-based vetting; don't
           hesitate to provide feedback <a href="https://forms.gle/DMt1xKyMKbHCsZMv5">here</a>!</p>
         <p>Before making plans, consider checking with venue staff or event organizers directly. This site is not
@@ -472,8 +449,10 @@ function updateCityIsEnabledSetting(newIsEnabled: boolean, cityId: string) {
         <p>In New York? Check out our sister site at <a href="https://anarchism.nyc/">anarchism.nyc</a>- this site
           wouldn't exist without it.</p>
         <p>Looking for a dedicated BDSM events calendar? Check out <a href="https://erobay.com/">erobay.com</a>.</p>
-        <p>Looking for more electronic music? Check out <a href="https://19hz.info/eventlisting_BayArea.php">19hz.info</a>.</p>
-        <p>Looking for chill (and free) events to go with your pup(s), partner(s), or thing(s) <a href="https://sf.funcheap.com/events/">sf.funcheap</a>.</p>
+        <p>Looking for more electronic music? Check out <a
+            href="https://19hz.info/eventlisting_BayArea.php">19hz.info</a>.</p>
+        <p>Looking for chill (and free) events to go with your pup(s), partner(s), or thing(s) <a
+            href="https://sf.funcheap.com/events/">sf.funcheap</a>.</p>
         <p>Want your event listed here? You must be publishing a machine-readable feed of event data formatted in <a
             href="https://fullcalendar.io/docs/event-source">a compatible Event Source format</a>. (This can be as simple
           as a <a href="https://support.google.com/calendar/answer/37083">public Google Calendar</a>.) Once published,
@@ -482,7 +461,8 @@ function updateCityIsEnabledSetting(newIsEnabled: boolean, cityId: string) {
           there! Thanks to recent advances in AI, you may also share your events as Instagram posts, but it comes at the
           expense of accuracy and Ivy's budget (nonexistent). Donations are greatly appreciated and can be made <a
             href='https://ko-fi.com/ivyraine'>here</a>!</p>
-        <a href="https://raw.githubusercontent.com/ivyraine/bay.lgbt/main/public/event_sources.json">event sources</a> |
+        <a href="https://raw.githubusercontent.com/ivyraine/bay.lgbt/main/server/utils/event_sources.json">event
+          sources</a> |
         <a href="https://github.com/ivyraine/bay.lgbt/">source code</a>
       </div>
     </div>

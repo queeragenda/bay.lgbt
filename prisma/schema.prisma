@@ -10,6 +10,46 @@ datasource db {
   url      = env("DATABASE_PRISMA_URL")
 }
 
+// UrlSource are for sources of events that are fetchible by a single URL.
+// Stored URLs should not include things like API keys, this should be added to
+// the URL at the time the fetch request is placed.
+model UrlSource {
+  id             Int      @id @default(autoincrement())
+  sourceID       String?
+  sourceType     String
+  sourceName     String
+  sourceCity     String
+  url            String
+  lastScraped    DateTime
+  etagLastScrape String?
+
+  events UrlEvent[]
+}
+
+model UrlEvent {
+  id       Int @id @default(autoincrement())
+  sourceId Int
+
+  title         String
+  start         DateTime
+  end           DateTime
+  url           String   @unique
+  createdAt     DateTime @default(now())
+  extendedProps String?
+
+  source UrlSource       @relation(fields: [sourceId], references: [id])
+  images UrlEventImage[]
+}
+
+model UrlEventImage {
+  id          Int      @id @default(autoincrement())
+  url         String
+  eventID     Int
+  event       UrlEvent @relation(fields: [eventID], references: [id])
+  contentType String
+  data        Bytes
+}
+
 model InstagramEventOrganizer {
   id            Int              @id @default(autoincrement())
   username      String           @unique

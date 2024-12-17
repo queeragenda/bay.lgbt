@@ -1,4 +1,4 @@
-import { scrapeInstagram } from "~~/utils/instagram";
+import { scrapeInstagram } from "~~/server/utils/instagram";
 
 export default defineEventHandler(async event => {
 	const eventCounts = await scrapeInstagram();

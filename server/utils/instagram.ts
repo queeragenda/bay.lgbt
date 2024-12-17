@@ -4,7 +4,7 @@ import vision from '@google-cloud/vision';
 import { DateTime } from "luxon";
 import { OpenAiInstagramResult, instagramInitialPrompt, executePrompt } from "./openai";
 
-import { prisma } from '~~/utils/db';
+import { prisma } from '~~/server/utils/db';
 import { logger as mainLogger } from './logger';
 import { InstagramApiPost, InstagramSource } from "~~/types";
 

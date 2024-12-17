@@ -1,4 +1,4 @@
-import { fixupInstagramIngestion } from "~~/utils/instagram";
+import { fixupInstagramIngestion } from "~~/server/utils/instagram";
 
 export default defineEventHandler(async event => {
 	return await fixupInstagramIngestion();

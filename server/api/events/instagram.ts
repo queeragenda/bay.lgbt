@@ -1,11 +1,10 @@
-import { serverStaleWhileInvalidateSeconds } from '~~/utils/util';
-import { logger as mainLogger } from '~~/utils/logger';
+import { logger as mainLogger } from '~~/server/utils/logger';
 import { CityEventListing } from '~~/types';
-import { prisma } from '~~/utils/db';
+import { prisma } from '~~/server/utils/db';
 
 const logger = mainLogger.child({ provider: 'instagram' });
 
-export default defineCachedEventHandler(async (event) => {
+export default defineEventHandler(async (event) => {
 	try {
 		const body = await fetchInstagramEvents();
 
@@ -19,10 +18,6 @@ export default defineCachedEventHandler(async (event) => {
 			statusMessage: '' + error,
 		})
 	}
-}, {
-	maxAge: 60,
-	staleMaxAge: serverStaleWhileInvalidateSeconds,
-	swr: true,
 });
 
 async function fetchInstagramEvents(): Promise<CityEventListing[]> {
