@@ -3,97 +3,73 @@
 		{
 			"name": "Bay Area Queer Zine Fest",
 			"username": "baqzf",
-			"context_clues": [
-				""
-			],
+			"context_clues": [""],
 			"city": "San Francisco"
 		},
 		{
 			"name": "DIY Queer Arts Fest",
 			"username": "diyqueerartsfest",
-			"context_clues": [
-				""
-			],
+			"context_clues": [""],
 			"city": "Santa Cruz"
 		},
 		{
 			"name": "2727 California Street",
 			"username": "2727californiastreet",
-			"context_clues": [
-				""
-			],
+			"context_clues": [""],
 			"city": "Berkeley"
 		},
 		{
 			"name": "A.B.O. Comix",
 			"username": "a.b.o.comix",
-			"context_clues": [
-				""
-			],
+			"context_clues": [""],
 			"city": "San Francisco"
 		},
 		{
 			"name": "Camp Beaverton",
 			"username": "campbeaverton",
-			"context_clues": [
-				""
-			],
+			"context_clues": [""],
 			"city": "Oakland"
 		},
 		{
 			"name": "Histrionixx",
 			"username": "histrionixxsf",
-			"context_clues": [
-				"Music"
-			],
+			"context_clues": ["Music"],
 			"city": "San Francisco"
 		},
 		{
 			"name": "Digi Divas",
 			"username": "digi.divas",
-			"context_clues": [
-				"Music"
-			],
+			"context_clues": ["Music"],
 			"city": "San Francisco"
 		},
 		{
 			"name": "Queer Cultural Center",
 			"username": "qcc_sf",
-			"context_clues": [
-				""
-			],
+			"context_clues": [""],
 			"city": "San Francisco"
 		},
 		{
 			"name": "Bound Together Books",
 			"username": "boundtogethercollective",
-			"context_clues": [
-				"Anarchism"
-			],
+			"context_clues": ["Anarchism"],
 			"city": "San Francisco"
 		},
 		{
 			"name": "Frameline Fest",
 			"username": "framelinefest",
-			"context_clues": [
-				"Film"
-			],
+			"context_clues": ["Film"],
 			"city": "San Francisco"
 		},
 		{
 			"name": "Hot Goth GF Radio",
 			"username": "hotgothgfradio",
-			"context_clues": [
-				"Music"
-			],
+			"context_clues": ["Music"],
 			"city": "San Francisco"
 		},
 		{
 			"name": "Batcave",
 			"username": "batcavesf",
-			"context_clues": [
-				"Music"
-			],
+			"context_clues": ["Music"],
 			"city": "San Francisco"
 		},
 		{
@@ -105,25 +81,19 @@
 		{
 			"name": "Envelope Soundsystem",
 			"username": "envelope.soundsystem",
-			"context_clues": [
-				"Music"
-			],
+			"context_clues": ["Music"],
 			"city": "San Francisco"
 		},
 		{
 			"name": "Poetry Slime",
 			"username": "poetry.slime",
-			"context_clues": [
-				"Poetry"
-			],
+			"context_clues": ["Poetry"],
 			"city": "San Francisco"
 		},
 		{
 			"name": "Queer Bedtime",
 			"username": "queerbedtime",
-			"context_clues": [
-				"Storytelling"
-			],
+			"context_clues": ["Storytelling"],
 			"city": "San Francisco"
 		},
 		{
@@ -141,25 +111,13 @@
 		{
 			"name": "Gray Area",
 			"username": "grayareaorg",
-			"context_clues": [
-				"Art"
-			],
-			"city": "San Francisco"
-		},
-		{
-			"name": "Mother",
-			"username": "motherbarsf",
-			"context_clues": [
-				""
-			],
+			"context_clues": ["Art"],
 			"city": "San Francisco"
 		},
 		{
 			"name": "non-binary run club",
 			"username": "nbrcsf",
-			"context_clues": [
-				"Non-binary Running"
-			],
+			"context_clues": ["Non-binary Running"],
 			"city": "San Francisco"
 		},
 		{
@@ -177,73 +135,55 @@
 		{
 			"name": "Morning After Pill Radio",
 			"username": "morningafterpillradio",
-			"context_clues": [
-				"Music"
-			],
+			"context_clues": ["Music"],
 			"city": "San Francisco"
 		},
 		{
 			"name": "Karaoke with Dana",
 			"username": "karaokewithdana",
-			"context_clues": [
-				""
-			],
+			"context_clues": [""],
 			"city": "San Francisco"
 		},
 		{
 			"name": "SOMArts Cultural Center",
 			"username": "somarts",
-			"context_clues": [
-				"Art"
-			],
+			"context_clues": ["Art"],
 			"city": "San Francisco"
 		},
 		{
 			"name": "The Good Fun",
 			"username": "the.good.fun",
-			"context_clues": [
-				""
-			],
+			"context_clues": [""],
 			"city": "San Francisco"
 		},
 		{
 			"name": "Transgender District",
 			"username": "transgenderdistrict",
-			"context_clues": [
-				""
-			],
+			"context_clues": [""],
 			"city": "San Francisco"
 		},
 		{
 			"name": "Trans March",
 			"username": "transmarch",
-			"context_clues": [
-				""
-			],
+			"context_clues": [""],
 			"city": "San Francisco"
 		},
 		{
 			"name": "Queer Women of Color Media Arts Project",
 			"username": "qwocmap",
-			"context_clues": [
-				"Film"
-			],
+			"context_clues": ["Film"],
 			"city": "San Francisco"
 		},
 		{
 			"name": "Chub Rollz",
 			"username": "chubrollz",
-			"context_clues": [
-				"Skate"
-			],
+			"context_clues": ["Skate"],
 			"city": "Oakland"
 		},
 		{
 			"name": "The Spooky Haus",
 			"username": "thespookyhaus",
-			"context_clues": [
-				"Art"
-			],
+			"context_clues": ["Art"],
 			"city": "Oakland"
 		},
 		{
@@ -285,17 +225,13 @@
 		{
 			"name": "Passionfruit",
 			"username": "passionfruitdanceparty",
-			"context_clues": [
-				"Dance"
-			],
+			"context_clues": ["Dance"],
 			"city": "Oakland"
 		},
 		{
 			"name": "Skate Like a Girl",
 			"username": "skatelikeagirlsfbay",
-			"context_clues": [
-				""
-			],
+			"context_clues": [""],
 			"city": "Oakland"
 		},
 		{
@@ -307,97 +243,73 @@
 		{
 			"name": "East Bay Baddie Billiards",
 			"username": "eastbaybaddiebilliards",
-			"context_clues": [
-				"Billiards"
-			],
+			"context_clues": ["Billiards"],
 			"city": "Oakland"
 		},
 		{
 			"name": "Thee Stork Club",
 			"username": "theestorkcluboakland",
-			"context_clues": [
-				""
-			],
+			"context_clues": [""],
 			"city": "Oakland"
 		},
 		{
 			"name": "The Unusual",
 			"username": "theunusualevent",
-			"context_clues": [
-				""
-			],
+			"context_clues": [""],
 			"city": "Oakland"
 		},
 		{
 			"name": "orifice.0",
 			"username": "orifice.0",
-			"context_clues": [
-				"Music"
-			],
+			"context_clues": ["Music"],
 			"city": "San Jose"
 		},
 		{
 			"name": "CircusOfSin",
 			"username": "circusofsin",
-			"context_clues": [
-				"Drag"
-			],
+			"context_clues": ["Drag"],
 			"city": "San Jose"
 		},
 		{
 			"name": "Splash",
 			"username": "splashsjc",
-			"context_clues": [
-				""
-			],
+			"context_clues": [""],
 			"city": "San Jose"
 		},
 		{
 			"name": "Silicon Valley Pride",
 			"username": "svpride",
-			"context_clues": [
-				""
-			],
+			"context_clues": [""],
 			"city": "San Jose"
 		},
 		{
 			"name": "The Q Corner",
 			"username": "theqcorner",
-			"context_clues": [
-				""
-			],
+			"context_clues": [""],
 			"city": "Others in Santa Clara County"
 		},
 		{
 			"name": "Postcards 4 LGBTQI+ Prisoners",
 			"username": "snailmailproject_831",
-			"context_clues": [
-				""
-			],
+			"context_clues": [""],
 			"city": "Santa Cruz"
 		},
 		{
 			"name": "Santa Cruz Dyke Trans March Collective",
 			"username": "santacruzdtmc",
-			"context_clues": [
-				""
-			],
+			"context_clues": [""],
 			"city": "Santa Cruz"
 		},
 		{
 			"name": "The So-so Market",
 			"username": "thesosomarket",
-			"context_clues": [
-				""
-			],
+			"context_clues": [""],
 			"city": "Santa Cruz"
 		},
 		{
 			"name": "Pajaro Valley Pride",
 			"username": "pajarovalleypride_831",
-			"context_clues": [
-				""
-			],
+			"context_clues": [""],
 			"city": "Others in Santa Cruz County"
 		}
 	],
@@ -612,6 +524,11 @@
 			"name": "The Neighbor's Pub",
 			"url": "https://www.theneighborspub.org/events?format=json",
 			"city": "Santa Cruz"
+		},
+		{
+			"name": "Mother",
+			"url": "https://www.mothersf.com/events-1?format=json",
+			"city": "San Francisco"
 		}
 	],
 	"timely": [
