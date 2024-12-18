@@ -6,40 +6,96 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_PRISMA_URL")
-  directUrl = env("DATABASE_URL_NON_POOLING")
+}
+
+// UrlSource are for sources of events that are fetchible by a single URL.
+// Stored URLs should not include things like API keys, this should be added to
+// the URL at the time the fetch request is placed.
+model UrlSource {
+  id             Int      @id @default(autoincrement())
+  sourceID       String?
+  sourceType     String
+  sourceName     String
+  sourceCity     String
+  url            String
+  lastScraped    DateTime
+  etagLastScrape String?
+
+  events UrlEvent[]
+}
+
+model UrlEvent {
+  id       Int @id @default(autoincrement())
+  sourceId Int
+
+  title         String
+  start         DateTime
+  end           DateTime
+  url           String   @unique
+  createdAt     DateTime @default(now())
+  extendedProps String?
+
+  source UrlSource       @relation(fields: [sourceId], references: [id])
+  images UrlEventImage[]
+}
+
+model UrlEventImage {
+  id          Int      @id @default(autoincrement())
+  url         String
+  eventID     Int
+  event       UrlEvent @relation(fields: [eventID], references: [id])
+  contentType String
+  data        Bytes
 }
 
 model InstagramEventOrganizer {
-  id              Int       @default(autoincrement()) @id
-  username        String    @db.VarChar(255) @unique
-  city            String    @db.VarChar(255)
-  contextClues    String    @db.VarChar(255)
-  events          InstagramEvent[]
-  nonEvents       InstagramNonEvent[]
-  createdAt       DateTime  @default(now())
-  lastUpdated     DateTime  @default(now())
+  id            Int              @id @default(autoincrement())
+  username      String           @unique
+  city          String
+  contextClues  String
+  events        InstagramEvent[]
+  createdAt     DateTime         @default(now())
+  lastUpdated   DateTime         @default(now())
+  InstagramPost InstagramPost[]
+}
+
+model InstagramImage {
+  id            Int           @id @default(autoincrement())
+  url           String
+  postID        String
+  InstagramPost InstagramPost @relation(fields: [postID], references: [id])
+  data          Bytes
+}
+
+model InstagramPost {
+  // Instagram Post ID, from Instagram
+  id      String           @id
+  url     String
+  caption String
+  images  InstagramImage[]
+
+  organizer   InstagramEventOrganizer @relation(fields: [organizerId], references: [id])
+  organizerId Int
+  postDate    DateTime // The time the post was posted to Instagram
+  createdAt   DateTime                @default(now()) // The time that we first saw this post in our scraping
+  completedAt DateTime? // Timestamp we finished the extraction job, null if not completed
+
+  InstagramEvent InstagramEvent?
 }
 
 model InstagramEvent {
-  igId            String    @db.VarChar(255) @id
-  title           String    @db.VarChar(255)
-  start           DateTime
-  end             DateTime
-  url             String    @db.VarChar(255)
-  organizer       InstagramEventOrganizer @relation(fields: [organizerId], references: [id])
-  organizerId     Int
-  createdAt       DateTime  @default(now())
-
-  @@index([organizerId])
-}
-
-model InstagramNonEvent {
-  igId            String    @db.VarChar(255) @id
-  organizer       InstagramEventOrganizer @relation(fields: [organizerId], references: [id])
-  organizerId     Int
-  createdAt       DateTime  @default(now())
+  // Instagram Post ID, from Instagram
+  postID      String                  @id
+  title       String
+  start       DateTime
+  end         DateTime
+  url         String
+  organizer   InstagramEventOrganizer @relation(fields: [organizerId], references: [id])
+  organizerId Int
+  createdAt   DateTime                @default(now())
+  post        InstagramPost           @relation(fields: [postID], references: [id])
 
   @@index([organizerId])
 }

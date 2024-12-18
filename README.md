@@ -2,7 +2,7 @@
 if you'd like to help maintain bay.lgbt, please shoot me an email! I am actively looking for co-maintainers due to being short on time as of late. I'm looking for people who can implement features, fix bugs, and/or keep the list of event organizers up-to-date and curated! The latter doesn't require any coding experience.
 
 # bay.lgbt
-an lgbt events aggregator for the SF bay!  
+an lgbt events aggregator for the SF bay!
 yes!
 
 # The bay.lgbt story (filled with, choices)
@@ -40,7 +40,39 @@ yes!
 - wow, web dev is pain (*puts up ad for co-maintainers*)
 
 # Development
-TODO
+
+You can use the `dev` task to run the development environment locally. This will start up bay.lgbt on [localhost:3000](http://localhost:3000).
+
+```
+$ npm install --locked
+$ npm run dev
+```
+
+## Environment Variables
+
+There are a number of environment variables that you can set locally to influence the dev environment. Our server library Nitro has [its own variables](https://nitro.build/deploy/runtimes/node#environment-variables) as well. If a variable has a default value, it is indicated below.
+
+```env
+# Port the dev server should listen on
+NITRO_PORT=3000
+
+EVENTBRITE_API_KEY
+
+GOOGLE_CALENDAR_API_KEY
+
+# These next variables are required for displaying Instagram event data
+INSTAGRAM_BUSINESS_USER_ID
+INSTAGRAM_USER_ACCESS_TOKEN
+
+GOOGLE_CLOUD_VISION_PRIVATE_KEY
+GOOGLE_CLOUD_VISION_CLIENT_EMAIL
+
+OPENAI_API_KEY
+
+WIX_SYZYGY_COOP_API_KEY
+WIX_SYZYGY_COOP_ACCOUNT_ID
+WIX_SYZYGY_COOP_SITE_ID
+```
 
 # Funding
 Donations to keep bay.lgbt running are appreciated! Transparently, here are the costs to maintain the site:
