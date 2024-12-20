@@ -11,6 +11,8 @@ import FullCalendar from '@fullcalendar/vue3'
 import { ModalsContainer, useModal } from 'vue-final-modal'
 import FilterModal from './FilterModal.vue'
 
+const props = defineProps({ organizer: String });
+
 interface County {
   enabled: any;
   cities: any;
@@ -255,10 +257,18 @@ function moveListViewScrollbarToTodayAndColor() {
 }
 
 async function getEventSources() {
-  const endpoints = [
-    '/api/events/events',
-    '/api/events/instagram',
+  const route = useRoute();
+
+  let endpoints = [
+    `/api/events/events`,
+    `/api/events/instagram`,
   ];
+  if (props.organizer) {
+    endpoints = [
+      `/api/events/events?organizer=${props.organizer}`,
+      `/api/events/instagram?username=${props.organizer}`,
+    ];
+  }
 
   // TODO: figure out a real caching system
   // This is to preventing the UI changes from each fetch result to cause more fetches to occur.,
@@ -268,8 +278,8 @@ async function getEventSources() {
   }));
 }
 
-// Multiple re-renders (which may be unrelated to the fetching) cause this to be called multiple times.
 getEventSources();
+
 // A hack to move the scrollbar to today after mounting- it is inconsistent otherwise on mobile.
 if (process.client)
   setTimeout(moveListViewScrollbarToTodayAndColor, 0);

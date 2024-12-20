@@ -1,12 +1,19 @@
 import { logger as mainLogger } from '~~/server/utils/logger';
 import { CityEventListing } from '~~/types';
 import { prisma } from '~~/server/utils/db';
+import { getQuery } from 'h3';
 
 const logger = mainLogger.child({ provider: 'url-events' });
 
 export default defineEventHandler(async (event) => {
+	const query = getQuery(event);
+	const eventQuery: EventsQuery = {};
+	if (typeof query.organizer === 'string') {
+		eventQuery.organizer = query.organizer;
+	}
+
 	try {
-		const body = await fetchEvents();
+		const body = await fetchEvents(eventQuery);
 
 		return {
 			body
@@ -20,8 +27,15 @@ export default defineEventHandler(async (event) => {
 	}
 });
 
-async function fetchEvents(): Promise<CityEventListing[]> {
+interface EventsQuery {
+	organizer?: string
+}
+
+async function fetchEvents(query: EventsQuery): Promise<CityEventListing[]> {
 	const sources = await prisma.urlSource.findMany({
+		where: {
+			sourceName: query.organizer,
+		},
 		include: {
 			events: {
 				include: {
@@ -30,6 +44,14 @@ async function fetchEvents(): Promise<CityEventListing[]> {
 			},
 		}
 	});
+
+	if (sources.length === 0) {
+		const matchText = query.organizer ? ` named ${query.organizer}` : '';
+		throw createError({
+			statusCode: 404,
+			message: `No organizer found${matchText}`,
+		})
+	}
 
 	const response = sources.map(source => ({
 		city: source.sourceCity,

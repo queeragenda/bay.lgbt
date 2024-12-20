@@ -5,8 +5,14 @@ import { prisma } from '~~/server/utils/db';
 const logger = mainLogger.child({ provider: 'instagram' });
 
 export default defineEventHandler(async (event) => {
+	const query = getQuery(event);
+	const eventQuery: EventsQuery = {};
+	if (typeof query.username === 'string') {
+		eventQuery.username = query.username;
+	}
+
 	try {
-		const body = await fetchInstagramEvents();
+		const body = await fetchInstagramEvents(eventQuery);
 
 		return {
 			body
@@ -20,8 +26,15 @@ export default defineEventHandler(async (event) => {
 	}
 });
 
-async function fetchInstagramEvents(): Promise<CityEventListing[]> {
+interface EventsQuery {
+	username?: string
+}
+
+async function fetchInstagramEvents(query: EventsQuery): Promise<CityEventListing[]> {
 	const organizers = await prisma.instagramEventOrganizer.findMany({
+		where: {
+			username: query.username,
+		},
 		include: {
 			events: {
 				include: {

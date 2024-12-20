@@ -7,6 +7,7 @@ export default defineNuxtConfig({
 	modules: [
 		'nuxt-security'
 	],
+	pages: true,
 	// See https://nuxt-security.vercel.app/getting-started/quick-start for info on security.
 	security: {
 		rateLimiter: {

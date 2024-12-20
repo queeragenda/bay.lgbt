@@ -28,5 +28,5 @@ useHead({
 </script>
 
 <template>
-  <App />
+  <NuxtPage />
 </template>
