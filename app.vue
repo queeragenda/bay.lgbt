@@ -3,7 +3,9 @@ import { AppConfigInput } from '@nuxt/schema'
 
 const app = useAppConfig() as AppConfigInput
 useHead({
-  title: 'bay.lgbt',
+  titleTemplate: (titleChunk) => {
+    return titleChunk ? `${titleChunk} - bay.lgbt` : 'bay.lgbt';
+  },
   meta: [
     { name: 'viewport', content: 'width=device-width, initial-scale=1' },
     {
