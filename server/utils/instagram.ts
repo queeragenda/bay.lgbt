@@ -418,7 +418,10 @@ export async function scrapeInstagram(opts?: ScrapeOptions) {
 		where: {
 			username: opts?.username,
 			lastUpdated,
-		}
+		},
+		orderBy: {
+			lastUpdated: 'asc'
+		},
 	})
 
 	const countsByOrganizer = [];
