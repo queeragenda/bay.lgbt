@@ -478,7 +478,9 @@ body.no-scroll {
 .popper-box-wrapper {
   display: flex;
   justify-content: center;
-    align-items: center;
+  align-items: center;
+  overflow: auto;
+  max-height: 90%;
 }
 
 .popper-box-inner h1 {
