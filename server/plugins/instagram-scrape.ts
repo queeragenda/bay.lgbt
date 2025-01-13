@@ -13,11 +13,11 @@ export default defineNitroPlugin(async (nitroApp) => {
 		logger.warn('Skipping Instgram scrapes due to SKIP_SCRAPE env var');
 		return;
 	}
-	setInterval(() => runScrape(), 1000 * 60 * 10);
+	setInterval(() => runScrape(), 1000 * 60 * 60);
 
 	runScrape();
 })
 
 function runScrape() {
-	scrapeInstagram({ onlyUpdateStalerThan: DateTime.now().minus({ hours: 2 }) });
+	scrapeInstagram({ onlyUpdateStalerThan: DateTime.now().minus({ hours: 1 }) });
 }
