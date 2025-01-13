@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
@@ -7,9 +7,11 @@ import $ from 'jquery';
 import { DateTime } from 'luxon';
 
 import 'assets/style.css';
-import FullCalendar from '@fullcalendar/vue3'
-import { ModalsContainer, useModal } from 'vue-final-modal'
-import FilterModal from './FilterModal.vue'
+import FullCalendar from '@fullcalendar/vue3';
+import { ModalsContainer, useModal } from 'vue-final-modal';
+import FilterModal from './FilterModal.vue';
+import EventModal from './EventModal.vue';
+import { type CalendarOptions, type EventClickArg } from '@fullcalendar/core/index.js';
 
 const props = defineProps({ organizer: String });
 
@@ -162,7 +164,18 @@ const { open: openFilterModal, close: closeFilterModal } = useModal({
   },
 })
 
-const calendarOptions = ref({
+const clickedEvent: Ref<EventClickArg | null> = ref(null); // For storing the clickedEvent data
+const { open: openEventModal, close: closeEventModal } = useModal({
+  component: EventModal,
+  attrs: {
+    event: clickedEvent,
+    onConfirm() {
+      closeEventModal()
+    },
+  },
+})
+
+const calendarOptions: Ref<CalendarOptions> = ref({
   plugins: [dayGridPlugin, timeGridPlugin, listPlugin],
   initialView: getWindowWidth() <= 600 ? 'listMonth' : 'dayGridMonth',
   customButtons: {
@@ -198,10 +211,9 @@ const calendarOptions = ref({
   eventSources: [],
   // Open in a new tab.
   eventClick: function (event) {
-    if (event.event.url) {
-      window.open(event.event.url);
-      event.jsEvent.preventDefault();
-    }
+    event.jsEvent.preventDefault(); // Prevent the default behavior of clicking a link
+    clickedEvent.value = event;
+    openEventModal();
   },
   progressiveEventRendering: true, // More re-renders; not batched. Needs further testing.
   stickyHeaderDates: true,

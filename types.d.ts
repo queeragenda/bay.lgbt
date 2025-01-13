@@ -1,3 +1,5 @@
+import { type EventInput } from '@fullcalendar/core';
+
 interface SourceFile {
 	instagram: InstagramSource[];
 }
@@ -32,6 +34,6 @@ export interface InstagramApiPostChild {
 
 export interface CityEventListing {
 	city: string
-	events: any[]
 	organizer: string
+	events: EventInput[]
 }

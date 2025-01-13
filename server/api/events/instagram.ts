@@ -42,7 +42,7 @@ async function fetchInstagramEvents(query: EventsQuery): Promise<CityEventListin
 						include: {
 							images: {
 								select: { id: true }
-							}
+							},
 						}
 					}
 				}
@@ -52,17 +52,21 @@ async function fetchInstagramEvents(query: EventsQuery): Promise<CityEventListin
 
 	const response = organizers.map(organizer => ({
 		city: organizer.city,
+		organizer: organizer.username,
 		events: organizer.events.map(event => ({
-			postID: event.postID,
 			title: event.title,
 			start: event.start,
 			end: event.end,
 			url: event.url,
-			organizerID: event.organizerId,
 			createdAt: event.createdAt,
-			images: event.post.images.map(img => `/api/images/instagram/${img.id}`),
+			extendedProps: {
+				description: event.post.caption,
+				images: event.post.images.map(img => `/api/images/instagram/${img.id}`),
+				org: organizer.username,
+				postID: event.postID,
+			}
 		})),
-		organizer: organizer.username,
 	}));
+
 	return response;
 }
