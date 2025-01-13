@@ -58,6 +58,22 @@ function instagramURL(sourceUsername: string) {
 		+ `&access_token=${process.env.INSTAGRAM_USER_ACCESS_TOKEN}`
 }
 
+
+class RateLimitError extends Error {
+	callCount: number;
+	cpuTime: number;
+	totalTime: number;
+
+	constructor(callCount: number, cpuTime: number, totalTime: number) {
+		super(`Instagram rate limit hit: calls: ${callCount}, cpuTime: ${cpuTime}, time: ${totalTime}`);
+		this.name = "RateLimitError";
+
+		this.callCount = callCount;
+		this.cpuTime = cpuTime;
+		this.totalTime = totalTime;
+	}
+}
+
 // Fetches the five most recent posts from the given Instagram account.
 async function fetchPosts(organizer: InstagramEventOrganizer): Promise<InstagramApiPost[]> {
 	const response = await fetch(instagramURL(organizer.username));
@@ -70,8 +86,7 @@ async function fetchPosts(organizer: InstagramEventOrganizer): Promise<Instagram
 		const totalCPUTime = appUsage.total_cputime;
 		const totalTime = appUsage.total_time;
 		if (callCount >= 100 || totalCPUTime >= 100 || totalTime >= 100) {
-			// TODO: handle this more gracefully
-			throw new Error(`Instagram rate limit hit: calls: ${callCount}, cpuTime: ${totalCPUTime}, time: ${totalTime}`);
+			throw new RateLimitError(callCount, totalCPUTime, totalTime);
 		}
 
 		logger.debug({ appUsage, username: organizer.username }, 'Current rate limit')
@@ -366,25 +381,20 @@ async function fetchAndPersistImage(post: InstagramPost, url: string): Promise<I
 }
 
 async function ingestEventsForOrganizer(organizer: InstagramEventOrganizer): Promise<InstagramEvent[]> {
-	try {
-		const posts = await fetchPosts(organizer);
+	const posts = await fetchPosts(organizer);
 
-		const maybeEvents = await Promise.all(posts.map(post => handleInstagramPost(organizer, post)));
+	const maybeEvents = await Promise.all(posts.map(post => handleInstagramPost(organizer, post)));
 
-		const events: InstagramEvent[] = [];
-		for (let maybeEvent of maybeEvents) {
-			if (maybeEvent) {
-				events.push(maybeEvent);
-			}
+	const events: InstagramEvent[] = [];
+	for (let maybeEvent of maybeEvents) {
+		if (maybeEvent) {
+			events.push(maybeEvent);
 		}
-
-		await prisma.instagramEventOrganizer.update({ where: { id: organizer.id }, data: { lastUpdated: new Date() } });
-
-		return events;
-	} catch (e: any) {
-		logger.error({ error: e.toString(), organizer: organizer.username }, 'error ingesting for organizer')
-		return [];
 	}
+
+	await prisma.instagramEventOrganizer.update({ where: { id: organizer.id }, data: { lastUpdated: new Date() } });
+
+	return events;
 }
 
 export interface ScrapeOptions {
@@ -411,11 +421,22 @@ export async function scrapeInstagram(opts?: ScrapeOptions) {
 		}
 	})
 
-	const countsByOrganizer = await Promise.all(organizers.map(async organizer => {
-		const events = await ingestEventsForOrganizer(organizer);
+	const countsByOrganizer = [];
+	for (let organizer of organizers) {
+		try {
+			const events = await ingestEventsForOrganizer(organizer);
 
-		return { organizer, eventCount: events.length };
-	}));
+			countsByOrganizer.push({ organizer, eventCount: events.length });
+		} catch (e: any) {
+			logger.error({ error: e.toString(), organizer: organizer.username }, 'error ingesting for organizer')
+
+			// If there was a rate limit error, we do not want to continue the scrape, we want to give it up now. Continuing
+			// the scrape now will only make the rate limit error worse.
+			if (e instanceof RateLimitError) {
+				break;
+			}
+		}
+	}
 
 	logger.info({ countsByOrganizer, opts }, 'Completed Instagram data ingestion');
 
