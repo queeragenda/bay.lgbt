@@ -461,6 +461,8 @@ body.no-scroll {
   max-width: 36rem;
   border-radius: 0.5rem;
   border-width: 1px;
+  overflow: auto;
+  max-height: 90%;
 }
 
 .popper-box-wrapper .popper-box-inner .county-header {
@@ -479,8 +481,6 @@ body.no-scroll {
   display: flex;
   justify-content: center;
   align-items: center;
-  overflow: auto;
-  max-height: 90%;
 }
 
 .popper-box-inner h1 {
