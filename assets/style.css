@@ -129,8 +129,6 @@ button:focus-visible {
 html,
 body {
   margin-top: 0;
-  -moz-user-select: none;
-  -webkit-user-select: none;
   background-repeat: repeat;
   margin: 0;
   height: 100%;
@@ -418,7 +416,7 @@ label {}
         0 min(2vw, 28px) #f9a825,
         0 min(2.25vw, 31.5px) #ff5722;
   }
-  
+
   .blurb {
   font-family: 'LDFComicSans';
   font-size: min(4vw, 1.75em);
@@ -506,7 +504,7 @@ body.no-scroll {
   /* Fix time getting cut off for multi-day events */
   overflow: visible;
 }
-  
+
 .popper-box-inner .bottom button {
   font-size: 14px;
 }
@@ -528,7 +526,7 @@ body.no-scroll {
   display: flex;
   justify-content: center;
   align-items: center;
-  flex-wrap: wrap; 
+  flex-wrap: wrap;
 }
 
 /* Shared styles for all images */
