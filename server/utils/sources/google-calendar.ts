@@ -1,6 +1,6 @@
 import { logger as mainLogger } from '~~/server/utils/logger';
 import { UrlEvent, UrlSource } from '@prisma/client';
-import { UrlScraper, UrlSourceInit, SourceFile, fetchCached } from '../http';
+import { UrlScraper, UrlSourceInit, SourceFile, fetchCached, UrlEventInit } from '../http';
 
 const logger = mainLogger.child({ provider: 'google-calendar' });
 
@@ -21,11 +21,17 @@ export class GcalScraper implements UrlScraper {
 		return fetchCached(source, url, async response => {
 			const data = await response.json()
 
-			return data.items.map((item: any) => ({
+			return data.items.map((item: any): UrlEventInit => ({
 				title: `${item.summary} @ ${source.sourceName}`,
 				start: item.start.dateTime,
 				end: item.end.dateTime,
 				url: item.htmlLink,
+				description: item.description,
+				location: {
+					eventVenue: {
+						name: item.location,
+					},
+				},
 			}));
 		});
 	}

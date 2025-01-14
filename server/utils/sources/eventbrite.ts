@@ -4,6 +4,7 @@ import { DateTime } from 'luxon';
 import { logger as mainLogger } from '~~/server/utils/logger';
 import { UrlSource } from '@prisma/client';
 import { fetchCached, SourceFile, UrlEventInit, UrlScraper, UrlSourceInit } from '../http';
+import { geoJson } from '../geo';
 
 const logger = mainLogger.child({ provider: 'eventbrite' });
 
@@ -109,46 +110,34 @@ async function getEventSeries(eventUrl: string) {
 	return body.events;
 }
 
-function convertSchemaDotOrgEventToFullCalendarEvent(item: any, sourceName: string) {
-	// If we have a `geo` object, format it to geoJSON.
-	var geoJSON = (item.location.geo) ? {
-		type: "Point",
-		coordinates: [
-			item.location.geo.longitude,
-			item.location.geo.latitude
-		]
-		// Otherwise, set it to null.
-	} : null;
-
+function convertSchemaDotOrgEventToFullCalendarEvent(item: any, sourceName: string): UrlEventInit {
 	return {
 		title: `${item.name} @ ${sourceName}`,
 		// Converts from System Time to UTC.
 		start: DateTime.fromISO(item.startDate).toUTC().toJSDate(),
 		end: DateTime.fromISO(item.endDate).toUTC().toJSDate(),
 		url: item.url,
-		extendedProps: {
-			description: item.description || null,
-			image: item.image,
-			location: {
-				geoJSON: geoJSON,
-				eventVenue: {
-					name: item.location.name,
-					address: {
-						streetAddress: item.location.streetAddress,
-						addressLocality: item.location.addressLocality,
-						addressRegion: item.location.addressRegion,
-						postalCode: item.location.postalCode,
-						addressCountry: item.location.addressCountry
-					},
-					geo: item.location?.geo
-				}
+		description: item.description || null,
+		imageUrls: [item.image],
+		location: {
+			geoJSON: geoJson(item.location?.geo?.longitude, item.location?.geo?.latitude),
+			eventVenue: {
+				name: item.location.name,
+				address: {
+					streetAddress: item.location.streetAddress,
+					addressLocality: item.location.addressLocality,
+					addressRegion: item.location.addressRegion,
+					postalCode: item.location.postalCode,
+					addressCountry: item.location.addressCountry
+				},
+				geo: item.location?.geo
 			}
 		}
 	};
 };
 
 // The problem with the Eventbrite developer API format is that it lacks geolocation.
-function convertEventbriteAPIEventToFullCalendarEvent(item: any, sourceName: string) {
+function convertEventbriteAPIEventToFullCalendarEvent(item: any, sourceName: string): UrlEventInit {
 	try {
 		return {
 			title: `${item.name.text} @ ${sourceName}`,

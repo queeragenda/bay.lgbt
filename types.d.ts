@@ -37,3 +37,32 @@ export interface CityEventListing {
 	organizer: string
 	events: EventInput[]
 }
+
+export interface EventLocation {
+	geoJSON?: EventGeoJsonLocation
+	eventVenue?: EventVenue
+}
+
+export interface EventGeoJsonLocation {
+	type: 'Point',
+	coordinates: [number, number]
+}
+
+export interface EventVenue {
+	name?: string
+	address?: VenueAddress
+	geo?: VenueGeo
+}
+
+export interface VenueGeo {
+	latitude?: number
+	longitude?: number
+}
+
+export interface VenueAddress {
+	streetAddress?: string
+	addressLocality?: string
+	addressRegion?: string
+	postalCode?: string
+	addressCountry?: string
+}

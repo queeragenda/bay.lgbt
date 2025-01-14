@@ -2,6 +2,7 @@ import { logger as mainLogger } from '~~/server/utils/logger';
 import { CityEventListing } from '~~/types';
 import { prisma } from '~~/server/utils/db';
 import { getQuery } from 'h3';
+import { UrlSource } from '@prisma/client';
 
 const logger = mainLogger.child({ provider: 'url-events' });
 
@@ -61,7 +62,7 @@ async function fetchEvents(query: EventsQuery): Promise<CityEventListing[]> {
 			let extendedProps = {};
 			try {
 				if (event.extendedProps) {
-					JSON.parse(event.extendedProps);
+					extendedProps = JSON.parse(event.extendedProps);
 				}
 			} catch (e) {
 				logger.warn({ extendedProps: event.extendedProps, eventID: event.id, sourceID: event.sourceId, sourceName: source.sourceName }, 'Invalid JSON in extendedProps attribute, this is a bug!');

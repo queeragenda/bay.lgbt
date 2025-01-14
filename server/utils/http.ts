@@ -1,4 +1,4 @@
-import { UrlEvent, UrlSource } from "@prisma/client";
+import { UrlSource } from "@prisma/client";
 import { DateTime } from "luxon";
 import { prisma } from "./db";
 import { EventbriteScraper, EventbriteSingleScraper } from "./sources/eventbrite";
@@ -12,7 +12,7 @@ import { WixScraper } from "./sources/wix";
 import { WordpressTribeScraper } from "./sources/wordpress-tribe";
 import eventSourcesJSON from '~~/server/utils/event_sources.json';
 import { logger as mainLogger } from '~~/server/utils/logger';
-import { writeFileSync } from "fs";
+import { EventLocation } from "~~/types";
 
 const logger = mainLogger.child({});
 
@@ -44,7 +44,11 @@ export interface UrlEventInit {
 	title: string
 	start: Date
 	end: Date
-	extendedProps?: any
+
+	// These fields below will not actually get saved into the database
+	description?: string
+	location?: EventLocation
+	imageUrls?: [string]
 }
 
 interface JustScrapedEvent extends UrlEventInit {
@@ -141,10 +145,16 @@ async function persistNewEvents(events: JustScrapedEvent[]) {
 		existingUrlsSet.add(e.url);
 		return true;
 	}).map(e => {
-		if (e.extendedProps) {
-			e.extendedProps = JSON.stringify(e.extendedProps);
-		}
-		return e;
+		const { imageUrls, description, location, ...restOfTheEvent } = e;
+		// TODO: store images
+
+		return {
+			...restOfTheEvent,
+			extendedProps: JSON.stringify({
+				description,
+				location,
+			}),
+		};
 	});
 
 	const newEvents = await prisma.urlEvent.createMany({

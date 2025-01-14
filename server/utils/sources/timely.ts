@@ -25,7 +25,7 @@ export class TimelyScraper implements UrlScraper {
 			// Convert to map because Timely returns an object with keys being dates, with data as values.
 			const map = new Map(Object.entries(json.data.items));
 
-			return [...map.values()].map((item: any) => {
+			return [...map.values()].map((item: any): UrlEventInit => {
 				item = item[0];
 				const timeZone = item.timezone;
 				return {
