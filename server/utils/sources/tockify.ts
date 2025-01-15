@@ -48,7 +48,7 @@ function convertTockifyEventToFullCalendarEvent(e: any, url: URL, sourceName: st
 		imageUrls,
 		description: e.content.description.text,
 		location: {
-			geoJSON: geoJson(e.content.location.longitude, e.content.location.latitude),
+			geoJSON: geoJson(e.content.location?.longitude, e.content.location?.latitude),
 			eventVenue: {
 				name: e.content.place,
 				address: {

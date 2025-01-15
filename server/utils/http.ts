@@ -153,6 +153,7 @@ async function persistNewEvents(events: JustScrapedEvent[]) {
 			extendedProps: JSON.stringify({
 				description,
 				location,
+				images: imageUrls,
 			}),
 		};
 	});

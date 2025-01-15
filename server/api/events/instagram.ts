@@ -1,6 +1,8 @@
 import { logger as mainLogger } from '~~/server/utils/logger';
 import { CityEventListing } from '~~/types';
 import { prisma } from '~~/server/utils/db';
+import sanitizeHtml from 'sanitize-html';
+import { instagramEventToApiResponse, urlIfy } from '~~/server/utils/event-api';
 
 const logger = mainLogger.child({ provider: 'instagram' });
 
@@ -50,23 +52,14 @@ async function fetchInstagramEvents(query: EventsQuery): Promise<CityEventListin
 		}
 	});
 
-	const response = organizers.map(organizer => ({
+	return organizers.map(organizer => ({
 		city: organizer.city,
 		organizer: organizer.username,
-		events: organizer.events.map(event => ({
-			title: event.title,
-			start: event.start,
-			end: event.end,
-			url: event.url,
-			createdAt: event.createdAt,
-			extendedProps: {
-				description: event.post.caption,
-				images: event.post.images.map(img => `/api/images/instagram/${img.id}`),
-				org: organizer.username,
-				postID: event.postID,
-			}
-		})),
+		events: organizer.events.map(event => instagramEventToApiResponse(
+			event,
+			event.post,
+			event.post.images.map(i => i.id),
+			organizer
+		))
 	}));
-
-	return response;
 }

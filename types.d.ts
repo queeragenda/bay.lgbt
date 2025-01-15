@@ -1,4 +1,5 @@
 import { type EventInput } from '@fullcalendar/core';
+import * as FC from '@fullcalendar/core';
 
 interface SourceFile {
 	instagram: InstagramSource[];
@@ -13,6 +14,23 @@ interface InstagramSource {
 
 interface InstagramApiGetPostsResponse {
 	business_discovery: { media: { data: InstagramApiPost[] } }
+}
+
+export interface ApiEvent {
+	title: string
+	start: string | Date
+	end: string | Date
+	url: string
+	extendedProps: EventExtendedProps
+}
+
+export interface EventExtendedProps {
+	description?: string
+	location?: EventLocation
+	images?: string[]
+	createdAt: string | Date
+	originalUrl: string
+	organizer: string
 }
 
 // The fields that come back on an Instagram post from our API call

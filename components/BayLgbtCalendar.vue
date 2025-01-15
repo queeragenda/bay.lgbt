@@ -6,11 +6,9 @@ import listPlugin from '@fullcalendar/list';
 import $ from 'jquery';
 import { DateTime } from 'luxon';
 
-import 'assets/style.css';
 import FullCalendar from '@fullcalendar/vue3';
-import { ModalsContainer, useModal } from 'vue-final-modal';
+import { useModal } from 'vue-final-modal';
 import FilterModal from './FilterModal.vue';
-import EventModal from './EventModal.vue';
 import { type CalendarOptions, type EventClickArg } from '@fullcalendar/core/index.js';
 
 const props = defineProps({ organizer: String });
@@ -164,17 +162,6 @@ const { open: openFilterModal, close: closeFilterModal } = useModal({
   },
 })
 
-const clickedEvent: Ref<EventClickArg | null> = ref(null); // For storing the clickedEvent data
-const { open: openEventModal, close: closeEventModal } = useModal({
-  component: EventModal,
-  attrs: {
-    event: clickedEvent,
-    onConfirm() {
-      closeEventModal()
-    },
-  },
-})
-
 const calendarOptions: Ref<CalendarOptions> = ref({
   plugins: [dayGridPlugin, timeGridPlugin, listPlugin],
   initialView: getWindowWidth() <= 600 ? 'listMonth' : 'dayGridMonth',
@@ -209,12 +196,6 @@ const calendarOptions: Ref<CalendarOptions> = ref({
   navLinks: true,
   weekNumbers: updateWeekNumbers(),
   eventSources: [],
-  // Open in a new tab.
-  eventClick: function (event) {
-    event.jsEvent.preventDefault(); // Prevent the default behavior of clicking a link
-    clickedEvent.value = event;
-    openEventModal();
-  },
   progressiveEventRendering: true, // More re-renders; not batched. Needs further testing.
   stickyHeaderDates: true,
   // Event handlers.
@@ -448,45 +429,5 @@ function updateCityIsEnabledSetting(newIsEnabled: boolean, cityId: string) {
 </script>
 
 <template>
-  <ModalsContainer />
-  <div class="calendar-container">
-    <div style="display: flex; flex-direction:column; position:relative;">
-      <div class="title">bay.lgbt</div>
-      <div style="display:flex; flex-direction: column; align-items: center;">
-        <div class="blurb">A communal board for LGBT events all around SF bay, updated 25/7! Seeking co-maintainers ❤️
-        </div>
-      </div>
-    </div>
-    <FullCalendar :options='calendarOptions' />
-    <div style="display: flex; align-items: center; flex-direction: row;">
-      <div class="desc">
-        <p>bay.lgbt was built with the personal hope that no LGBTQ+ person should be without community. The site will
-          always be free, without frills, and remain a public utility. The events here are drawn from various <a
-            href="https://github.com/ivyraine/bay.lgbt/blob/main/server/utils/event_sources.json">organizer listings</a>
-          that
-          contributors (thank you!) have provided. The listings are in a constant state of community-based vetting; don't
-          hesitate to provide feedback <a href="https://forms.gle/DMt1xKyMKbHCsZMv5">here</a>!</p>
-        <p>Before making plans, consider checking with venue staff or event organizers directly. This site is not
-          affiliated with any events listed.</p>
-        <p>In New York? Check out our sister site at <a href="https://anarchism.nyc/">anarchism.nyc</a>- this site
-          wouldn't exist without it.</p>
-        <p>Looking for a dedicated BDSM events calendar? Check out <a href="https://erobay.com/">erobay.com</a>.</p>
-        <p>Looking for more electronic music? Check out <a
-            href="https://19hz.info/eventlisting_BayArea.php">19hz.info</a>.</p>
-        <p>Looking for chill (and free) events to go with your pup(s), partner(s), or thing(s) <a
-            href="https://sf.funcheap.com/events/">sf.funcheap</a>.</p>
-        <p>Want your event listed here? You must be publishing a machine-readable feed of event data formatted in <a
-            href="https://fullcalendar.io/docs/event-source">a compatible Event Source format</a>. (This can be as simple
-          as a <a href="https://support.google.com/calendar/answer/37083">public Google Calendar</a>.) Once published,
-          request inclusion of your event feed by <a href="https://github.com/ivyraine/bay.lgbt/issues">submitting your
-            event feed address to us via a new GitHub issue</a>. You may also provide feedback, fixes, or improvements
-          there! Thanks to recent advances in AI, you may also share your events as Instagram posts, but it comes at the
-          expense of accuracy and Ivy's budget (nonexistent). Donations are greatly appreciated and can be made <a
-            href='https://ko-fi.com/ivyraine'>here</a>!</p>
-        <a href="https://raw.githubusercontent.com/ivyraine/bay.lgbt/main/server/utils/event_sources.json">event
-          sources</a> |
-        <a href="https://github.com/ivyraine/bay.lgbt/">source code</a>
-      </div>
-    </div>
-  </div>
+  <FullCalendar :options='calendarOptions' />
 </template>

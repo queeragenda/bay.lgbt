@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { AppConfigInput } from '@nuxt/schema'
+import { ModalsContainer } from 'vue-final-modal';
+import 'assets/style.css';
 
 const app = useAppConfig() as AppConfigInput
 useHead({
@@ -30,5 +32,22 @@ useHead({
 </script>
 
 <template>
-  <NuxtPage />
+  <ModalsContainer />
+  <div class="page">
+    <div class="page-header">
+      <div class="title">
+        <a href="/">bay.lgbt</a>
+      </div>
+      <div class="blurb">A communal board for LGBT events all around SF bay, updated 25/7!</div>
+    </div>
+    <NuxtPage />
+    <div style="display: flex; align-items: center; flex-direction: row;">
+      <div class="desc">
+        <a href="/about">About Us</a> | <a
+          href="https://raw.githubusercontent.com/ivyraine/bay.lgbt/main/server/utils/event_sources.json">event
+          sources</a> |
+        <a href="https://github.com/ivyraine/bay.lgbt/">source code</a>
+      </div>
+    </div>
+  </div>
 </template>

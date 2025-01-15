@@ -3,6 +3,7 @@ import { CityEventListing } from '~~/types';
 import { prisma } from '~~/server/utils/db';
 import { getQuery } from 'h3';
 import { UrlSource } from '@prisma/client';
+import { urlEventToHttpResponse } from '~~/server/utils/event-api';
 
 const logger = mainLogger.child({ provider: 'url-events' });
 
@@ -58,26 +59,7 @@ async function fetchEvents(query: EventsQuery): Promise<CityEventListing[]> {
 		city: source.sourceCity,
 		organizer: source.sourceName,
 		sourceType: source.sourceType,
-		events: source.events.map(event => {
-			let extendedProps = {};
-			try {
-				if (event.extendedProps) {
-					extendedProps = JSON.parse(event.extendedProps);
-				}
-			} catch (e) {
-				logger.warn({ extendedProps: event.extendedProps, eventID: event.id, sourceID: event.sourceId, sourceName: source.sourceName }, 'Invalid JSON in extendedProps attribute, this is a bug!');
-			}
-
-			return {
-				title: event.title,
-				start: event.start,
-				end: event.end,
-				url: event.url,
-				createdAt: event.createdAt,
-				images: event.images.map(img => `/api/images/events/${img.id}`),
-				extendedProps,
-			};
-		}),
+		events: source.events.map(event => urlEventToHttpResponse(event, source)),
 	}));
 
 	return response;
