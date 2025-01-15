@@ -28,7 +28,12 @@ useHead({
       'data-goatcounter': 'https://baywatch.lilys.hair/count',
     },
   ],
-})
+});
+
+useSeoMeta({
+  ogTitle: 'bay.lgbt - your queer events destination!',
+  ogDescription: 'bay.lgbt is a free and non-commercial site that lists queer events in the san francisco bay area',
+});
 </script>
 
 <template>
