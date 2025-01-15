@@ -8,13 +8,13 @@
 
 @font-face {
   font-family: 'ChicagoFLF';
-  src: url('./assets/ChicagoFLF.ttf') format('truetype');
+  src: url('/assets/ChicagoFLF.ttf') format('truetype');
   /* Safari, Android, iOS */
 }
 
 @font-face {
   font-family: 'LDFComicSans';
-  src: url('./assets/LDFComicSans.ttf') format('truetype');
+  src: url('/assets/LDFComicSans.ttf') format('truetype');
 }
 
 /* Takes precedence over FullCalendar's  styling. */

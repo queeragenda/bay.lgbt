@@ -62,7 +62,7 @@ export interface UrlScraper {
 	generateSources(sources: SourceFile): UrlSourceInit[]
 }
 
-export interface ScrapeOptions {
+export interface UrlEventScrapeOptions {
 	// Will only run the scrape for organizers that have not been updated since before the given time
 	onlyUpdateStalerThan?: DateTime,
 }
@@ -95,7 +95,7 @@ export async function initializeAllScrapers() {
 	}))
 }
 
-export async function doUrlScrapes(opts?: ScrapeOptions) {
+export async function doUrlScrapes(opts?: UrlEventScrapeOptions) {
 	logger.info({ opts }, 'Starting URL scrapes');
 
 	let lastScraped;

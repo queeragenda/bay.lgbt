@@ -397,14 +397,14 @@ async function ingestEventsForOrganizer(organizer: InstagramEventOrganizer): Pro
 	return events;
 }
 
-export interface ScrapeOptions {
+export interface IgScrapeOptions {
 	username?: string,
 
 	// Will only run the scrape for organizers that have not been updated since before the given time
 	onlyUpdateStalerThan?: DateTime,
 }
 
-export async function scrapeInstagram(opts?: ScrapeOptions) {
+export async function scrapeInstagram(opts?: IgScrapeOptions) {
 	logger.info({ opts }, 'Starting Instagram data ingestion');
 
 	let lastUpdated;

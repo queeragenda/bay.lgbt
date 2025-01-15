@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { AppConfigInput } from '@nuxt/schema'
 import { ModalsContainer } from 'vue-final-modal';
 import 'assets/style.css';
 
-const app = useAppConfig() as AppConfigInput
 useHead({
   titleTemplate: (titleChunk) => {
     return titleChunk ? `${titleChunk} - bay.lgbt` : 'bay.lgbt';

@@ -1,4 +1,4 @@
-import { InstagramEvent, InstagramEventOrganizer, InstagramImage, InstagramPost, UrlEvent, UrlSource } from "@prisma/client";
+import { InstagramEvent, InstagramEventOrganizer, InstagramPost, UrlEvent, UrlSource } from "@prisma/client";
 import sanitizeHtml from 'sanitize-html';
 import { ApiEvent } from "~~/types";
 
@@ -63,7 +63,7 @@ export function urlIfy(fragment: string): string {
 		.toLowerCase()
 		.replace(/^\s+/, '')
 		.replace(/\s+$/, '')
-		.replaceAll(/[ @.&:+/]+/g, '-')
 		.replaceAll(/[()]*/g, '')
+		.replaceAll(/[^a-zA-Z0-9]+/g, '-')
 		.replaceAll(/-+/g, '-');
 }
