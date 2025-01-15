@@ -488,6 +488,11 @@
 			"name": "San Francisco Queer Pinball League",
 			"googleCalendarId": "0bead8563c1c04721df993607fdb8afb93ccbb6f4eb56f7ffd3c73f54dc94f66@group.calendar.google.com",
 			"city": "San Francisco"
+		},
+		{
+			"name": "The Exiles",
+			"googleCalendarId": "1u1222s0kbcg8fgr4ccu3dn4b6bda0bf@import.calendar.google.com",
+			"city": "San Francisco"
 		}
 	],
 	"wordPressTribe": [
