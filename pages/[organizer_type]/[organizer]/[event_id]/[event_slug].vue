@@ -19,7 +19,7 @@ const { data } = await useFetch(`/api/events/${route.params.organizer_type}/${ro
 
     useSeoMeta({
       ogTitle: event.title,
-      ogDescription: `${start.toLocaleDateString()} @ ${start.toLocaleTimeString()} // ${event.extendedProps.description}`,
+      ogDescription: `${start.toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles' })} @ ${start.toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles' })} // ${event.extendedProps.description}`,
     });
   }
 });
