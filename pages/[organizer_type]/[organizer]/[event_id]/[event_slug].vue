@@ -8,21 +8,23 @@ definePageMeta({
 })
 
 const route = useRoute();
-const { data } = await useFetch(`/api/events/${route.params.organizer_type}/${route.params.event_id}`, {
-  async onResponse({ response }) {
-    const event: ApiEvent = response._data.body;
-    useHead({
-      title: event.title,
-    });
+const { data } = await useFetch<{ body: ApiEvent }>(`/api/events/${route.params.organizer_type}/${route.params.event_id}`);
 
-    const start = new Date(event.start);
+if (data?.value?.body) {
+  const event = data.value.body;
+  useHead({
+    title: event.title,
+  });
 
-    useSeoMeta({
-      ogTitle: event.title,
-      ogDescription: `${start.toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles' })} @ ${start.toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles' })} // ${event.extendedProps.description}`,
-    });
-  }
-});
+  const start = new Date(event.start);
+  const restDescription = event.extendedProps.description ? ` // ${event.extendedProps.description}` : '';
+
+  useSeoMeta({
+    ogTitle: event.title,
+    ogDescription: `${start.toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles' })} @ ${start.toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles' })}${restDescription}`,
+  });
+}
+
 </script>
 
 <template>
