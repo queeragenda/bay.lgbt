@@ -1,5 +1,7 @@
 <!-- OldSchoolWindow is a generic component that makes its content look (ish) like a Windows 9x window -->
 <script setup lang="ts">
+import './OldSchoolWindow.css';
+
 defineProps<{
   title: string
 }>()

@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { VueFinalModal } from 'vue-final-modal'
-import sanitizeHtml from 'sanitize-html';
+import './SingleEvent.css';
 
 const props = defineProps<{
   event: any // Declare the event prop here

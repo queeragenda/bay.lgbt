@@ -1,0 +1,11 @@
+.SingleEvent {
+    display: flex;
+    justify-content: center;
+    flex-direction: row;
+}
+
+@media (max-width: 1000px) {
+  .SingleEvent {
+      flex-direction: column;
+  }
+}

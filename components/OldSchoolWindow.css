@@ -1,0 +1,29 @@
+.OldSchoolWindow {
+    margin: min(1vw, 1.75em);
+    border: 1px solid #111;
+    background-color: #d0d0d0;
+    box-shadow:
+      1px 2px #111,
+      inset 1px 1px 0px 0px #fff,
+      inset -1px -1px 0px 0px #999;
+    max-width: 1000px;
+}
+
+.OldSchoolWindow-header {
+    text-align: center;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+}
+
+.OldSchoolWindow-bodyWrapper {
+    margin: 2px 4px 4px 4px;
+    border: 1px solid #111;
+    background-color: #ddd;
+    box-shadow: -1px -1px 0px 0px #999, 1px 1px 0px 0px #fff, inset 1px 1px 0px 0px #fff, inset -1px -1px 0px 0px #999;
+}
+
+.OldSchoolWindow-body {
+    background-color:  #eee;
+    border: 1px solid #ddd;
+    padding: 5px;
+}

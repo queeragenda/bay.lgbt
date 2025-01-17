@@ -1,0 +1,21 @@
+.OldSchoolButton button:active {
+  transition: 0s 1s;
+  background-image: linear-gradient(to bottom right, #f00, #f80, #ff0, #0f0, #0ff, #00f, #80f, #f00);
+}
+
+.OldSchoolButton button {
+    font-size: inherit;
+}
+
+/* Also exists in assets/style.css as the style for .fc-button-primary */
+.OldSchoolButton button {
+  color: black;
+  font-family: 'ChicagoFLF';
+  font-size: min(3.5vw, 1.2em);
+  background-color: #dedede;
+  display: inline-block;
+  margin-bottom: 0px;
+  border-radius: 3px;
+  border: 1px solid #000;
+  box-shadow: var(--button-box-shadow);
+}

@@ -1,5 +1,7 @@
 <!-- OldSchoolButton is a wrapper around NuxtLink that looks like a 90s UI button -->
 <script setup lang="ts">
+import './OldSchoolButton.css'
+
 defineProps<{
   to: any
 }>()

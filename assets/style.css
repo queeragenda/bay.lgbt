@@ -231,9 +231,10 @@ fc-theme-standard td,
   border-bottom: 1px solid #000;
 }
 
+/* Also copied in components/OldSchoolButton.css */
 .fc .fc-button-primary,
 .fc .fc-button-primary:not(:disabled),
-.popper-box-inner button, .OldSchoolButton button {
+.popper-box-inner button {
   color: black;
   font-family: 'ChicagoFLF';
   font-size: min(3.5vw, 1.2em);
@@ -382,55 +383,6 @@ body.no-scroll {
   display: flex;
   justify-content: center;
     align-items: center;
-}
-
-.OldSchoolWindow {
-    margin: min(1vw, 1.75em);
-    border: 1px solid #111;
-    background-color: #d0d0d0;
-    box-shadow:
-      1px 2px #111,
-      inset 1px 1px 0px 0px #fff,
-      inset -1px -1px 0px 0px #999;
-    max-width: 1000px;
-}
-
-.OldSchoolWindow-header {
-    text-align: center;
-}
-
-.OldSchoolWindow-bodyWrapper {
-    margin: 2px 4px 4px 4px;
-    border: 1px solid #111;
-    background-color: #ddd;
-    box-shadow: -1px -1px 0px 0px #999, 1px 1px 0px 0px #fff, inset 1px 1px 0px 0px #fff, inset -1px -1px 0px 0px #999;
-}
-
-.OldSchoolWindow-body {
-    background-color:  #eee;
-    border: 1px solid #ddd;
-    padding: 5px;
-}
-
-.OldSchoolButton button:active {
-  transition: 0s 1s;
-  background-image: linear-gradient(to bottom right, #f00, #f80, #ff0, #0f0, #0ff, #00f, #80f, #f00);
-}
-
-.OldSchoolButton button {
-    font-size: inherit;
-}
-
-.SingleEvent {
-    display: flex;
-    justify-content: center;
-    flex-direction: row;
-}
-
-@media (max-width: 1000px) {
-  .SingleEvent {
-      flex-direction: column;
-  }
 }
 
 .popper-box-inner {
