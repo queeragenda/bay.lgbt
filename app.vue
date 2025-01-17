@@ -39,7 +39,7 @@ useSeoMeta({
   <div class="page">
     <div class="page-header">
       <div class="title">
-        <a href="/">bay.lgbt</a>
+        <NuxtLink to="/">bay.lgbt</NuxtLink>
       </div>
       <div class="blurb">A communal board for LGBT events all around SF bay, updated 25/7!</div>
     </div>

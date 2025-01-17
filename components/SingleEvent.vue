@@ -82,12 +82,15 @@ const getImageClass = (index: number) => {
 
         <hr>
         <div class="SingleEvent-bottom">
-          <OldSchoolButton :href="eventURL">View Original</OldSchoolButton>
+          <OldSchoolButton :to="eventURL">View Original</OldSchoolButton>
+          <!-- <OldSchoolButton :to="{ name: 'o-organizer', props: { organizer: props.event.extendedProps.organizer } }"> -->
+          <!-- More from {{ props.event.extendedProps.organizer }} -->
+          <!-- </OldSchoolButton> -->
         </div>
       </OldSchoolWindow>
     </div>
 
-    <div>
+    <div v-if="eventImages && eventImages.length > 0">
       <OldSchoolWindow title="Images">
         <div class="image-container">
           <div class="image-wrapper" v-for="( url, index ) in  eventImages " :key="index">

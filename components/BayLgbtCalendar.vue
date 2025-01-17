@@ -9,7 +9,7 @@ import { DateTime } from 'luxon';
 import FullCalendar from '@fullcalendar/vue3';
 import { useModal } from 'vue-final-modal';
 import FilterModal from './FilterModal.vue';
-import { type CalendarOptions, type EventClickArg } from '@fullcalendar/core/index.js';
+import { type CalendarOptions } from '@fullcalendar/core/index.js';
 
 const props = defineProps({ organizer: String });
 
@@ -185,6 +185,17 @@ const calendarOptions: Ref<CalendarOptions> = ref({
     left: 'prev today,filter',
     center: 'title',
     right: 'dayGridMonth,listMonth next'
+  },
+  titleFormat: (info) => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Sept', 'Oct', 'Nov', 'Dec'];
+    const orgName = props.organizer ? ` - ${props.organizer}` : '';
+    const title = `${months[info.date.month]} ${info.date.year}${orgName}`;
+
+    if (info.date.month === 5) {
+      return `🏳️‍🌈 ${title} 🏳️‍🌈`;
+    }
+
+    return title;
   },
   buttonText: {
     month: 'grid', // Feels clearar than 'month' and 'list'

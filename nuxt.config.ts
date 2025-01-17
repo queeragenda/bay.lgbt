@@ -43,7 +43,15 @@ export default {
 				methods: '*',
 			},
 			route: ''
-		}
+		},
+		// Uncomment this to make nuxt devtools work (idk why this is required, i don't like it!)
+		// headers: {
+		// 	contentSecurityPolicy: {
+		// 		'script-src': ["'nonce-{{nonce}}'", "'strict-dynamic'"],
+		// 	},
+		// 	// 2.
+		// 	crossOriginEmbedderPolicy: false,
+		// },
 	},
 
 	css: ['vue-final-modal/style.css'],

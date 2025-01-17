@@ -1,14 +1,14 @@
-<!-- OldSchoolWindow is a generic component that makes its content look (ish) like a Windows 9x window -->
+<!-- OldSchoolButton is a wrapper around NuxtLink that looks like a 90s UI button -->
 <script setup lang="ts">
 defineProps<{
-  href: string
+  to: any
 }>()
 </script>
 
 <template>
-  <a :href="$props.href" class="OldSchoolButton">
+  <NuxtLink :to="$props.to" class="OldSchoolButton">
     <button type="button">
       <slot></slot>
     </button>
-  </a>
+  </NuxtLink>
 </template>
