@@ -63,6 +63,7 @@ const getImageClass = (index: number) => {
     <div>
       <OldSchoolWindow :title="eventTitle">
         <p>{{ startTime }}</p>
+        <EventLocation :location="eventLocation" />
         <hr>
 
         <!--
