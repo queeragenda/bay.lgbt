@@ -271,14 +271,14 @@ async function persistEvent(event: JustScrapedEvent, source: UrlSource): Promise
 				// URL if it's a multi-part event. This function assumes they will be unique but this is not a safe assumption to make
 				// :(
 				logger.debug({ url: event.url }, 'skipping insertion on already-seen event');
-				return undefined;
 			}
 		} else if (e instanceof Prisma.PrismaClientValidationError) {
 			logger.warn({ url: event.url, error: e.toString(), stack: e.stack, sourceType: source.sourceType, source: source.sourceName, event: eventToInsert }, 'skipping insertion due to event not matching db schema, this may be a bug!');
-			return undefined;
+		} else {
+			logger.warn({ url: event.url, error: e.toString(), stack: e.stack, sourceType: source.sourceType, source: source.sourceName, event: eventToInsert }, 'Unknown error occurred inserting event');
 		}
 
-		throw e;
+		return undefined;
 	}
 }
 
