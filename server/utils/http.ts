@@ -242,7 +242,7 @@ async function persistNewEvents(events: JustScrapedEvent[]): Promise<UrlEvent[]>
 	return actualEvents;
 }
 
-async function persistEvent(event: JustScrapedEvent): Promise<UrlEvent | undefined> {
+async function persistEvent(event: JustScrapedEvent, source: UrlSource): Promise<UrlEvent | undefined> {
 	const { images, description, location, ...restOfTheEvent } = event;
 
 	const eventToInsert = {
@@ -273,6 +273,9 @@ async function persistEvent(event: JustScrapedEvent): Promise<UrlEvent | undefin
 				logger.debug({ url: event.url }, 'skipping insertion on already-seen event');
 				return undefined;
 			}
+		} else if (e instanceof Prisma.PrismaClientValidationError) {
+			logger.warn({ url: event.url, error: e.toString(), stack: e.stack, sourceType: source.sourceType, source: source.sourceName, event: eventToInsert }, 'skipping insertion due to event not matching db schema, this may be a bug!');
+			return undefined;
 		}
 
 		throw e;
