@@ -59,10 +59,6 @@ export interface UrlEventImageInit {
 	data?: ArrayBuffer
 }
 
-interface JustScrapedEvent extends UrlEventInit {
-	sourceId: number
-}
-
 export interface UrlScraper {
 	name: string
 
@@ -144,7 +140,7 @@ export async function scrapeInstagram(opts?: IgScrapeOptions) {
 		try {
 			const events = await scraper.scrape(source);
 
-			const urlEvents = await persistNewEvents(events.map(e => ({ sourceId: source.id, ...e })));
+			const urlEvents = await persistNewEvents(source, events);
 
 			countsByOrganizer.push({ source, eventCount: urlEvents.length });
 
@@ -194,12 +190,11 @@ export async function doUrlScrapes(opts?: UrlEventScrapeOptions) {
 	const events = await Promise.all(sources.map(async source => {
 		const events = await scrapeEventsFromSource(source);
 
-		return events.map(event => ({ ...event, sourceId: source.id }));
+		return await persistNewEvents(source, events);
 	}));
 
-	const urlEvents = await persistNewEvents(events.flat());
 
-	logger.info({ eventCount: urlEvents.length, sourcesCount: sources.length }, 'Completed URL scrapes');
+	logger.info({ eventCount: events.flat().length, sourcesCount: sources.length }, 'Completed URL scrapes');
 }
 
 async function persistImages(event: UrlEvent, images?: UrlEventImageInit[]) {
@@ -213,7 +208,6 @@ async function persistImages(event: UrlEvent, images?: UrlEventImageInit[]) {
 				const resp = await fetch(url);
 				data = await resp.arrayBuffer();
 			}
-
 
 			await prisma.urlEventImage.create({
 				data: {
@@ -229,8 +223,8 @@ async function persistImages(event: UrlEvent, images?: UrlEventImageInit[]) {
 	}));
 }
 
-async function persistNewEvents(events: JustScrapedEvent[]): Promise<UrlEvent[]> {
-	const createdEvents = await Promise.all(events.map(e => persistEvent(e)));
+async function persistNewEvents(source: UrlSource, events: UrlEventInit[]): Promise<UrlEvent[]> {
+	const createdEvents = await Promise.all(events.map(e => persistEvent(source, e)));
 
 	const actualEvents: UrlEvent[] = [];
 	createdEvents.forEach(e => {
@@ -242,11 +236,12 @@ async function persistNewEvents(events: JustScrapedEvent[]): Promise<UrlEvent[]>
 	return actualEvents;
 }
 
-async function persistEvent(event: JustScrapedEvent, source: UrlSource): Promise<UrlEvent | undefined> {
+async function persistEvent(source: UrlSource, event: UrlEventInit): Promise<UrlEvent | undefined> {
 	const { images, description, location, ...restOfTheEvent } = event;
 
 	const eventToInsert = {
 		...restOfTheEvent,
+		sourceId: source.id,
 		extendedProps: JSON.stringify({
 			description,
 			location,
