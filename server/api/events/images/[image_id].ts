@@ -1,7 +1,7 @@
 import { prisma } from "~~/server/utils/db";
 
 export default defineEventHandler(async event => {
-	const imageID = Number(getRouterParam(event, 'id'));
+	const imageID = Number(getRouterParam(event, 'image_id'));
 	if (isNaN(imageID)) {
 		throw createError({
 			statusCode: 400,

@@ -40,7 +40,7 @@ export function urlEventToHttpResponse(event: UrlEvent, imageIds: number[], sour
 }
 
 export function imageUrl(imageId: number): string {
-	return `/api/event-images/${imageId}`;
+	return `/api/events/images/${imageId}`;
 }
 
 export function urlIfy(fragment: string): string {
