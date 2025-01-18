@@ -5,9 +5,7 @@ export default {
 		typeCheck: false
 	},
 
-	modules: [
-		'nuxt-security',
-	],
+	modules: ['nuxt-security', '@artmizu/nuxt-prometheus'],
 
 	pages: true,
 

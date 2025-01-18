@@ -10,6 +10,7 @@ import { OpenAiInstagramResult, instagramInitialPrompt, executePrompt } from "..
 
 import { prisma } from '~~/server/utils/db';
 import { InstagramApiPost } from "~~/types";
+import { instagramRateLimitHeader } from '../metrics';
 
 const logger = mainLogger.child({ provider: 'instagram' });
 
@@ -145,6 +146,11 @@ async function fetchPosts(source: InstagramSource): Promise<InstagramApiPost[]> 
 		const callCount = appUsage.call_count;
 		const totalCPUTime = appUsage.total_cputime;
 		const totalTime = appUsage.total_time;
+
+		instagramRateLimitHeader.labels('call_count').set(callCount);
+		instagramRateLimitHeader.labels('total_cputime').set(totalCPUTime);
+		instagramRateLimitHeader.labels('total_time').set(totalTime);
+
 		if (callCount >= 100 || totalCPUTime >= 100 || totalTime >= 100) {
 			throw new RateLimitError(callCount, totalCPUTime, totalTime);
 		}

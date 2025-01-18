@@ -14,6 +14,7 @@ import eventSourcesJSON from '~~/server/utils/event_sources.json';
 import { logger as mainLogger } from '~~/server/utils/logger';
 import { EventLocation } from "~~/types";
 import { InstagramScraper, RateLimitError } from "./sources/instagram";
+import { eventsSaved, imagesSaved, instagramRateLimitErrors, scrapeCompleteCount, scrapeStartCount, scrapeTime } from "./metrics";
 
 const logger = mainLogger.child({});
 
@@ -138,7 +139,7 @@ export async function scrapeInstagram(opts?: IgScrapeOptions) {
 	const countsByOrganizer = [];
 	for (let source of sources) {
 		try {
-			const events = await scraper.scrape(source);
+			const events = await runScraperWithMetrics(source, scraper);
 
 			const urlEvents = await persistNewEvents(source, events);
 
@@ -158,6 +159,7 @@ export async function scrapeInstagram(opts?: IgScrapeOptions) {
 			// If there was a rate limit error, we do not want to continue the scrape, we want to give it up now. Continuing
 			// the scrape now will only make the rate limit error worse.
 			if (e instanceof RateLimitError) {
+				instagramRateLimitErrors.inc();
 				break;
 			}
 		}
@@ -166,6 +168,21 @@ export async function scrapeInstagram(opts?: IgScrapeOptions) {
 	logger.info({ countsByOrganizer, opts }, 'Completed Instagram data ingestion');
 
 	return countsByOrganizer;
+}
+
+export async function runScraperWithMetrics(source: UrlSource, scraper: UrlScraper): Promise<UrlEventInit[]> {
+	const end = scrapeTime.labels(source.sourceType, source.sourceName).startTimer();
+	scrapeStartCount.labels(source.sourceType, source.sourceName).inc();
+	try {
+		const events = await scraper.scrape(source);
+		scrapeCompleteCount.labels(source.sourceType, source.sourceName, 'ok').inc();
+		end();
+		return events;
+	} catch (e: any) {
+		end();
+		scrapeCompleteCount.labels(source.sourceType, source.sourceName, 'error').inc();
+		throw e;
+	}
 }
 
 export async function doUrlScrapes(opts?: UrlEventScrapeOptions) {
@@ -197,7 +214,7 @@ export async function doUrlScrapes(opts?: UrlEventScrapeOptions) {
 	logger.info({ eventCount: events.flat().length, sourcesCount: sources.length }, 'Completed URL scrapes');
 }
 
-async function persistImages(event: UrlEvent, images?: UrlEventImageInit[]) {
+async function persistImages(source: UrlSource, event: UrlEvent, images?: UrlEventImageInit[]) {
 	if (!images) {
 		return;
 	}
@@ -217,6 +234,7 @@ async function persistImages(event: UrlEvent, images?: UrlEventImageInit[]) {
 					contentType: '',
 				}
 			});
+			imagesSaved.labels(source.sourceType, source.sourceName).inc()
 		} catch (e: any) {
 			logger.warn({ url, eror: e.toString() }, 'failed to fetch image');
 		}
@@ -232,6 +250,8 @@ async function persistNewEvents(source: UrlSource, events: UrlEventInit[]): Prom
 			actualEvents.push(e);
 		}
 	});
+
+	eventsSaved.labels(source.sourceType, source.sourceName).inc(actualEvents.length);
 
 	return actualEvents;
 }
@@ -255,7 +275,7 @@ async function persistEvent(source: UrlSource, event: UrlEventInit): Promise<Url
 			data: eventToInsert,
 		});
 
-		await persistImages(insertedEvent, images);
+		await persistImages(source, insertedEvent, images);
 
 		return insertedEvent;
 	} catch (e: any) {
@@ -281,7 +301,7 @@ async function scrapeEventsFromSource(source: UrlSource): Promise<UrlEventInit[]
 	const scraper = SCRAPER_MAP[source.sourceType];
 	if (scraper) {
 		try {
-			const newEvents = await scraper.scrape(source);
+			const newEvents = await runScraperWithMetrics(source, scraper);
 
 			await prisma.urlSource.update({
 				where: {
