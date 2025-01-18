@@ -1,6 +1,17 @@
-import { UrlEvent, UrlEventImage, UrlSource } from "@prisma/client";
+import { UrlEvent, UrlSource } from "@prisma/client";
 import sanitizeHtml from 'sanitize-html';
-import { ApiEvent } from "~~/types";
+import { ApiEvent, ApiOrganizer } from "~~/types";
+
+export function sourceToResponse(source: UrlSource): ApiOrganizer {
+	return {
+		name: source.sourceName,
+		slug: urlIfy(source.sourceName),
+		eventsUrl: `/api/list-events?organizerId=${source.id}`,
+		city: source.sourceCity,
+		lastScraped: source.lastScraped,
+		id: source.id,
+	}
+}
 
 export function urlEventToHttpResponse(event: UrlEvent, imageIds: number[], source: UrlSource): ApiEvent {
 	let extendedProps: any = {};
@@ -33,6 +44,7 @@ export function urlEventToHttpResponse(event: UrlEvent, imageIds: number[], sour
 			createdAt: event.createdAt,
 			originalUrl: event.url,
 			organizer: source.sourceName,
+			organizerId: source.id,
 			images: imageIds.map(imageUrl),
 			...extendedProps
 		},

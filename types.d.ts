@@ -5,6 +5,15 @@ interface InstagramApiGetPostsResponse {
 	business_discovery: { media: { data: InstagramApiPost[] } }
 }
 
+export interface ApiOrganizer {
+	id: number,
+	name: string
+	slug: string
+	eventsUrl: string
+	city: string
+	lastScraped: string | Date
+}
+
 export interface ApiEvent {
 	title: string
 	start: string | Date

@@ -6,7 +6,9 @@ const { data } = await useFetch(`/api/organizers`);
   <OldSchoolWindow title="Organizers" v-if="data">
     <ul>
       <li v-for="organizer in  data " :key="organizer.id">
-        <NuxtLink :to="{ name: 'o-organizer', params: { organizer: organizer.sourceName } }">{{ organizer.sourceName }}
+        <NuxtLink
+          :to="{ name: 'o-organizer_id-organizer_slug', params: { organizer_id: organizer.id, organizer_slug: organizer.slug } }">
+          {{ organizer.name }}
         </NuxtLink>
       </li>
     </ul>

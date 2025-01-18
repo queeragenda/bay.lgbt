@@ -11,7 +11,9 @@ import { useModal } from 'vue-final-modal';
 import FilterModal from './FilterModal.vue';
 import { type CalendarOptions } from '@fullcalendar/core/index.js';
 
-const props = defineProps({ organizer: String });
+const props = defineProps({
+  organizer: {},
+});
 
 interface County {
   enabled: any;
@@ -188,7 +190,7 @@ const calendarOptions: Ref<CalendarOptions> = ref({
   },
   titleFormat: (info) => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Sept', 'Oct', 'Nov', 'Dec'];
-    const orgName = props.organizer ? ` - ${props.organizer}` : '';
+    const orgName = props.organizer ? ` - ${props.organizer.name}` : '';
     const title = `${months[info.date.month]} ${info.date.year}${orgName}`;
 
     if (info.date.month === 5) {
@@ -265,7 +267,7 @@ async function getEventSources() {
 
   let endpoints = [`/api/list-events`];
   if (props.organizer) {
-    endpoints = [`/api/list-events?organizer=${props.organizer}`];
+    endpoints = [`/api/list-events?organizerId=${props.organizer.id}`];
   }
 
   // TODO: figure out a real caching system

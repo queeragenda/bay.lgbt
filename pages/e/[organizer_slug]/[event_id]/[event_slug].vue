@@ -4,7 +4,11 @@ import { ApiEvent } from '~~/types';
 const route = useRoute();
 const { data } = await useFetch<{ body: ApiEvent }>(`/api/events/${route.params.event_id}`);
 
+let moreEvents;
 if (data?.value?.body) {
+  const { data: moreEventsData } = await useFetch(`/api/list-events?organizerId=${data.value.body.extendedProps.organizerId}`);
+  moreEvents = moreEventsData;
+
   const event = data.value.body;
   useHead({
     title: event.title,
@@ -21,8 +25,30 @@ if (data?.value?.body) {
   });
 }
 
+let moreEventsFiltered;
+if (moreEvents?.value?.body) {
+  moreEventsFiltered = moreEvents.value.body[0].events.map(e => ({
+    ...e,
+    start: new Date(e.start),
+  })).filter(e => e.start > new Date());
+}
+
 </script>
 
 <template>
-  <SingleEvent v-if="data?.body" :event="data.body" />
+  <div class="EventPage">
+    <SingleEvent v-if="data?.body" :event="data.body" />
+    <!-- <OldSchoolWindow v-if="data?.body" :title="`More from ${data.body.extendedProps.organizer}`">
+
+      <ul v-if="moreEvents.body">
+        <li v-for="( event, index ) in moreEventsFiltered" :key="index">
+          {{ event.start.toLocaleString() }} -
+          <NuxtLink :to="event.url">{{ event.title }}</NuxtLink>
+        </li>
+      </ul>
+      <div v-else>
+        loading...
+      </div>
+    </OldSchoolWindow> -->
+  </div>
 </template>
