@@ -22,6 +22,7 @@ model UrlSource {
   url            String
   lastScraped    DateTime
   etagLastScrape String?
+  extraDataJson  String   @default("{}")
 
   events UrlEvent[]
 }
@@ -50,52 +51,10 @@ model UrlEventImage {
   data        Bytes
 }
 
-model InstagramEventOrganizer {
-  id            Int              @id @default(autoincrement())
-  username      String           @unique
-  city          String
-  contextClues  String
-  events        InstagramEvent[]
-  createdAt     DateTime         @default(now())
-  lastUpdated   DateTime         @default(now())
-  InstagramPost InstagramPost[]
-}
-
-model InstagramImage {
-  id            Int           @id @default(autoincrement())
-  url           String
-  postID        String
-  InstagramPost InstagramPost @relation(fields: [postID], references: [id])
-  data          Bytes
-}
-
-model InstagramPost {
-  // Instagram Post ID, from Instagram
-  id      String           @id
-  url     String
-  caption String
-  images  InstagramImage[]
-
-  organizer   InstagramEventOrganizer @relation(fields: [organizerId], references: [id])
-  organizerId Int
-  postDate    DateTime // The time the post was posted to Instagram
-  createdAt   DateTime                @default(now()) // The time that we first saw this post in our scraping
-  completedAt DateTime? // Timestamp we finished the extraction job, null if not completed
-
-  InstagramEvent InstagramEvent?
-}
-
-model InstagramEvent {
-  // Instagram Post ID, from Instagram
-  postID      String                  @id
-  title       String
-  start       DateTime
-  end         DateTime
-  url         String
-  organizer   InstagramEventOrganizer @relation(fields: [organizerId], references: [id])
-  organizerId Int
-  createdAt   DateTime                @default(now())
-  post        InstagramPost           @relation(fields: [postID], references: [id])
-
-  @@index([organizerId])
+// Record of scraping a particular IG post, only exists so that we can avoid
+// re-scraping posts and running up our OpenAI bill
+model InstagramPostScrapeRecord {
+  id        String   @id
+  url       String
+  scrapedAt DateTime @default(now())
 }

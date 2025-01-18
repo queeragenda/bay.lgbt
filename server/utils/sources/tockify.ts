@@ -36,8 +36,8 @@ function convertTockifyEventToFullCalendarEvent(e: any, url: URL, sourceName: st
 		? e.content.customButtonLink
 		: `${url.origin}/${url.searchParams.get('calname')}/detail/${e.eid.uid}/${e.eid.tid}`;
 
-	let imageUrls = e.content.imageSets.map((image: any) => {
-		return `https://d3flpus5evl89n.cloudfront.net/${image.ownerId}/${image.id}/scaled_512.jpg`;
+	let images = e.content.imageSets.map((image: any) => {
+		return { url: `https://d3flpus5evl89n.cloudfront.net/${image.ownerId}/${image.id}/scaled_512.jpg` };
 	});
 
 	return {
@@ -45,7 +45,7 @@ function convertTockifyEventToFullCalendarEvent(e: any, url: URL, sourceName: st
 		start: new Date(e.when.start.millis),
 		end: new Date(e.when.end.millis),
 		url: fullUrl,
-		imageUrls,
+		images,
 		description: e.content.description.text,
 		location: {
 			geoJSON: geoJson(e.content.location?.longitude, e.content.location?.latitude),

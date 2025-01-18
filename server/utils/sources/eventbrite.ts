@@ -118,7 +118,7 @@ function convertSchemaDotOrgEventToFullCalendarEvent(item: any, sourceName: stri
 		end: DateTime.fromISO(item.endDate).toUTC().toJSDate(),
 		url: item.url,
 		description: item.description || null,
-		imageUrls: [item.image],
+		images: [{ url: item.image }],
 		location: {
 			geoJSON: geoJson(item.location?.geo?.longitude, item.location?.geo?.latitude),
 			eventVenue: {

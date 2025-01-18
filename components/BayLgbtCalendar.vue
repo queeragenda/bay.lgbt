@@ -263,15 +263,9 @@ function moveListViewScrollbarToTodayAndColor() {
 async function getEventSources() {
   const route = useRoute();
 
-  let endpoints = [
-    `/api/events/events`,
-    `/api/events/instagram`,
-  ];
+  let endpoints = [`/api/list-events`];
   if (props.organizer) {
-    endpoints = [
-      `/api/events/events?organizer=${props.organizer}`,
-      `/api/events/instagram?username=${props.organizer}`,
-    ];
+    endpoints = [`/api/list-events?organizer=${props.organizer}`];
   }
 
   // TODO: figure out a real caching system

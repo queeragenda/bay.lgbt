@@ -11,7 +11,8 @@ export default defineEventHandler(async event => {
 
 	const image = await prisma.urlEventImage.findFirst({ where: { id: imageID } });
 	if (image) {
-		event.node.res.setHeader('Content-Type', image.contentType);
+		// TODO: content-type probably should be set from db
+		event.node.res.setHeader('Content-Type', 'image/jpeg');
 		return image.data;
 	}
 });

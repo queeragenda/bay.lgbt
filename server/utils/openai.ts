@@ -1,6 +1,7 @@
-import { InstagramEventOrganizer, InstagramPost } from "@prisma/client";
 import { OpenAIApi } from "openai";
+import { InstagramApiPost } from "~/types";
 import { logger } from "./logger";
+import { InstagramSource } from "./sources/instagram";
 
 export interface OpenAiInstagramResult {
 	isEvent: boolean;
@@ -19,9 +20,9 @@ export interface OpenAiInstagramResult {
 	endYear: number | null;
 }
 
-export function instagramInitialPrompt(organizer: InstagramEventOrganizer, post: InstagramPost, ocrResult: string | null): string {
-	const caption = post.caption;
-	const tags = organizer.contextClues;
+export function instagramInitialPrompt(source: InstagramSource, post: InstagramApiPost, ocrResult: string | null): string {
+	const caption = post.caption || '';
+	const tags = source.contextClues.join(' ');
 	ocrResult = ocrResult ? ocrResult.substring(0, 2200) : '';
 
 	return `You're given a post from an Instagram account${tags.length > 0 ? ' related to ' + tags : ''}. Your task is to parse event information and output it into JSON. (Note: it's possible that the post isn't event-related).\n` +
@@ -61,7 +62,7 @@ export function instagramInitialPrompt(organizer: InstagramEventOrganizer, post:
 		"- The OCR result is provided by an OCR AI & thus may contain errors. Use it as a supplement for the information provided in the caption! This is especially useful when the caption is lacking information. The OCR Result also may contain time or title information that's not provided by the caption!\n" +
 		"- Sometimes a person or artist's username and their actual name can be found in the caption and OCR result; the username can be indicated by it being all lowercase and containing `.`s or `_`s. Their actual names would have very similar letters to the username, and might be provided by the OCR result. If the actual name is found, prefer using it for the JSON title, otherwise use the username.\n" +
 		// "Here are some additional rules you should follow:\n" +
-		`- The post was posted on ${post.postDate.toDateString()}. The time it was posted itself is not an event start time. However, if the post is about an event, the post time can be used to extrapolate event times relative to today, time-relative wording is used; for example, if the event starts 'tomorrow', you can determine that the event begins 1 day after today's date.\n` +
+		`- The post was posted on ${post.timestamp}. The time it was posted itself is not an event start time. However, if the post is about an event, the post time can be used to extrapolate event times relative to today, time-relative wording is used; for example, if the event starts 'tomorrow', you can determine that the event begins 1 day after today's date.\n` +
 		"- If no start day is explicitly provided by the caption or OCR result, and it cannot be inferred using relative times, assign `startDay` to `null`.\n" +
 		"- If no end day is explicitly provided by the caption or OCR result, assign `endDay` to `null`.\n" +
 		// "-If only one time is provided in the caption or OCR result, assume it's the start time.\n" +
@@ -94,7 +95,7 @@ export function instagramInitialPrompt(organizer: InstagramEventOrganizer, post:
 }
 
 
-export function instagramRepairPrompt(modelOutputJson: string, post: InstagramPost, ocrResult: string | null): string {
+export function instagramRepairPrompt(modelOutputJson: string, post: InstagramApiPost, ocrResult: string | null): string {
 	return `You were given a post from an Instagram account and used it to generate the following JSON:\n` +
 		"```\n" +
 		`${modelOutputJson}` + "\n" +

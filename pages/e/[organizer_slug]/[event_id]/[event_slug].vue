@@ -1,14 +1,8 @@
 <script setup lang="ts">
 import { ApiEvent } from '~~/types';
 
-definePageMeta({
-  validate: async (route) => {
-    return route.params.organizer_type === 'i' || route.params.organizer_type === 'e';
-  }
-})
-
 const route = useRoute();
-const { data } = await useFetch<{ body: ApiEvent }>(`/api/events/${route.params.organizer_type}/${route.params.event_id}`);
+const { data } = await useFetch<{ body: ApiEvent }>(`/api/events/${route.params.event_id}`);
 
 if (data?.value?.body) {
   const event = data.value.body;

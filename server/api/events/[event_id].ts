@@ -1,14 +1,14 @@
 import { logger as mainLogger } from '~~/server/utils/logger';
 import { prisma } from '~~/server/utils/db';
-import { instagramEventToApiResponse } from '~~/server/utils/event-api';
+import { urlEventToHttpResponse } from '~~/server/utils/event-api';
 
 const logger = mainLogger.child({ provider: 'url-events' });
 
 export default defineEventHandler(async (event) => {
-	const postID = getRouterParam(event, 'post_id');
+	const eventID = Number(getRouterParam(event, 'event_id'));
 
 	try {
-		const body = await fetchEvent(postID);
+		const body = await fetchEvent(eventID);
 
 		return {
 			body
@@ -22,23 +22,23 @@ export default defineEventHandler(async (event) => {
 	}
 });
 
-async function fetchEvent(postID: string) {
-	const event = await prisma.instagramEvent.findFirst({
+async function fetchEvent(id: number) {
+	const event = await prisma.urlEvent.findFirst({
 		where: {
-			postID
+			id
 		},
 		include: {
-			post: { include: { images: { select: { id: true } } } },
-			organizer: true,
+			images: { select: { id: true } },
+			source: true,
 		}
 	});
 
 	if (!event) {
 		throw createError({
 			statusCode: 404,
-			message: `No post found with ID ${postID}`,
+			message: `No event found with ID ${id}`,
 		})
 	}
 
-	return instagramEventToApiResponse(event, event.post, event.post.images.map(i => i.id), event.organizer);
+	return urlEventToHttpResponse(event, event.images.map(i => i.id), event.source);
 }

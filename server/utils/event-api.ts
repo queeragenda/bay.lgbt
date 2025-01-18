@@ -1,8 +1,8 @@
-import { InstagramEvent, InstagramEventOrganizer, InstagramPost, UrlEvent, UrlSource } from "@prisma/client";
+import { UrlEvent, UrlEventImage, UrlSource } from "@prisma/client";
 import sanitizeHtml from 'sanitize-html';
 import { ApiEvent } from "~~/types";
 
-export function urlEventToHttpResponse(event: UrlEvent, source: UrlSource): ApiEvent {
+export function urlEventToHttpResponse(event: UrlEvent, imageIds: number[], source: UrlSource): ApiEvent {
 	let extendedProps: any = {};
 	try {
 		if (event.extendedProps) {
@@ -24,38 +24,23 @@ export function urlEventToHttpResponse(event: UrlEvent, source: UrlSource): ApiE
 		logger.warn({ extendedProps: event.extendedProps, eventID: event.id, sourceID: event.sourceId, sourceName: source.sourceName }, 'Invalid JSON in extendedProps attribute, this is a bug!');
 	}
 
-	// TODO: store images on our server, put images into extended props returned from this handlers
-	const { images, ...extendedPropsWithoutImage } = extendedProps;
-
 	return {
 		title: event.title,
 		start: event.start,
 		end: event.end,
-		url: `/e/${urlIfy(source.sourceName.toLowerCase())}/${event.id}/${urlIfy(event.title)}`,
+		url: `/e/${urlIfy(source.sourceName)}/${event.id}/${urlIfy(event.title)}`,
 		extendedProps: {
 			createdAt: event.createdAt,
 			originalUrl: event.url,
 			organizer: source.sourceName,
-			...extendedPropsWithoutImage
+			images: imageIds.map(imageUrl),
+			...extendedProps
 		},
 	};
 }
 
-export function instagramEventToApiResponse(event: InstagramEvent, post: InstagramPost, imageIds: number[], organizer: InstagramEventOrganizer): ApiEvent {
-	// TODO: store images on our server, put images into extended props returned from this handlers
-	return {
-		title: event.title,
-		start: event.start,
-		end: event.end,
-		url: `/i/${urlIfy(organizer.username.toLowerCase())}/${event.postID}/${urlIfy(event.title)}`,
-		extendedProps: {
-			createdAt: event.createdAt,
-			originalUrl: event.url,
-			organizer: organizer.username,
-			description: sanitizeHtml(post.caption),
-			images: imageIds.map(id => `/api/images/instagram/${id}`)
-		},
-	};
+export function imageUrl(imageId: number): string {
+	return `/api/event-images/${imageId}`;
 }
 
 export function urlIfy(fragment: string): string {

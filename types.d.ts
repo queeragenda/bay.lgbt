@@ -1,17 +1,6 @@
 import { type EventInput } from '@fullcalendar/core';
 import * as FC from '@fullcalendar/core';
 
-interface SourceFile {
-	instagram: InstagramSource[];
-}
-
-interface InstagramSource {
-	name: string;
-	username: string;
-	context_clues: string[];
-	city: string;
-}
-
 interface InstagramApiGetPostsResponse {
 	business_discovery: { media: { data: InstagramApiPost[] } }
 }

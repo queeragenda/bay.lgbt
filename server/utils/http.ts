@@ -1,4 +1,4 @@
-import { UrlSource } from "@prisma/client";
+import { Prisma, UrlEvent, UrlEventImage, UrlSource } from "@prisma/client";
 import { DateTime } from "luxon";
 import { prisma } from "./db";
 import { EventbriteScraper, EventbriteSingleScraper } from "./sources/eventbrite";
@@ -13,6 +13,7 @@ import { WordpressTribeScraper } from "./sources/wordpress-tribe";
 import eventSourcesJSON from '~~/server/utils/event_sources.json';
 import { logger as mainLogger } from '~~/server/utils/logger';
 import { EventLocation } from "~~/types";
+import { InstagramScraper, RateLimitError } from "./sources/instagram";
 
 const logger = mainLogger.child({});
 
@@ -27,6 +28,7 @@ const SCRAPERS: UrlScraper[] = [
 	// new WithFriendsScraper(),
 	// new WixScraper(),
 	new WordpressTribeScraper(),
+	new InstagramScraper(),
 ];
 // This horribly ugly line turns the array of scrapers above into a map of scraper names to scraper instances
 const SCRAPER_MAP: { [name: string]: UrlScraper } = Object.assign({}, ...SCRAPERS.map(s => ({ [s.name]: s })));
@@ -37,6 +39,7 @@ export interface UrlSourceInit {
 	sourceName: string
 	sourceCity: string
 	sourceID?: string
+	extraData?: any
 }
 
 export interface UrlEventInit {
@@ -48,7 +51,12 @@ export interface UrlEventInit {
 	// These fields below will not actually get saved into the database
 	description?: string
 	location?: EventLocation
-	imageUrls?: [string]
+	images?: UrlEventImageInit[]
+}
+
+export interface UrlEventImageInit {
+	url: string
+	data?: ArrayBuffer
 }
 
 interface JustScrapedEvent extends UrlEventInit {
@@ -78,6 +86,11 @@ export async function initializeAllScrapers() {
 				return;
 			}
 
+			let extraDataJson = '{}';
+			if (sourceInit.extraData) {
+				extraDataJson = JSON.stringify(sourceInit.extraData);
+			}
+
 			await prisma.urlSource.create({
 				data: {
 					url: sourceInit.url,
@@ -89,10 +102,74 @@ export async function initializeAllScrapers() {
 					// scraped for the first hour of runtime, as the scrape job skips all sources that have been updated within
 					// the past hour.
 					lastScraped: new Date(0),
+					extraDataJson,
 				}
 			});
 		}))
 	}))
+}
+
+export interface IgScrapeOptions {
+	username?: string,
+
+	// Will only run the scrape for organizers that have not been updated since before the given time
+	onlyUpdateStalerThan?: DateTime,
+}
+
+export async function scrapeInstagram(opts?: IgScrapeOptions) {
+	logger.info({ opts }, 'Starting Instagram data ingestion');
+
+	let lastScraped;
+	if (opts?.onlyUpdateStalerThan) {
+		lastScraped = {
+			lte: opts.onlyUpdateStalerThan.toJSDate(),
+		};
+	}
+
+	let sources = await prisma.urlSource.findMany({
+		where: {
+			sourceName: opts?.username,
+			sourceType: 'instagram',
+			lastScraped,
+		},
+		orderBy: {
+			lastScraped: 'asc'
+		},
+	});
+
+	const scraper = new InstagramScraper();
+
+	const countsByOrganizer = [];
+	for (let source of sources) {
+		try {
+			const events = await scraper.scrape(source);
+
+			const urlEvents = await persistNewEvents(events.map(e => ({ sourceId: source.id, ...e })));
+
+			countsByOrganizer.push({ source, eventCount: urlEvents.length });
+
+			await prisma.urlSource.update({
+				data: {
+					lastScraped: new Date(),
+				},
+				where: {
+					id: source.id,
+				},
+			});
+		} catch (e: any) {
+			logger.error({ error: e.toString(), source: source.sourceName, stack: e.stack }, 'error ingesting for instagram user')
+
+			// If there was a rate limit error, we do not want to continue the scrape, we want to give it up now. Continuing
+			// the scrape now will only make the rate limit error worse.
+			if (e instanceof RateLimitError) {
+				break;
+			}
+		}
+	}
+
+	logger.info({ countsByOrganizer, opts }, 'Completed Instagram data ingestion');
+
+	return countsByOrganizer;
 }
 
 export async function doUrlScrapes(opts?: UrlEventScrapeOptions) {
@@ -108,6 +185,9 @@ export async function doUrlScrapes(opts?: UrlEventScrapeOptions) {
 	let sources = await prisma.urlSource.findMany({
 		where: {
 			lastScraped,
+			sourceType: {
+				not: 'instagram',
+			}
 		}
 	});
 
@@ -119,50 +199,84 @@ export async function doUrlScrapes(opts?: UrlEventScrapeOptions) {
 
 	const urlEvents = await persistNewEvents(events.flat());
 
-	logger.info({ eventCount: urlEvents.count, sourcesCount: sources.length }, 'Completed URL scrapes');
+	logger.info({ eventCount: urlEvents.length, sourcesCount: sources.length }, 'Completed URL scrapes');
 }
 
-async function persistNewEvents(events: JustScrapedEvent[]) {
-	// TODO: URLs are not guarunteed to be unique! Forbidden Tickets for example can have multiple events with the same
-	// URL if it's a multi-part event. This function assumes they will be unique but this is not a safe assumption to make
-	// :(
-	const existingUrls = await prisma.urlEvent.findMany({
-		where: {
-			url: { in: events.map(e => e.url) },
-		},
-		select: { url: true },
-	});
-
-	const existingUrlsSet = new Set<string>();
-	for (let url of existingUrls) {
-		existingUrlsSet.add(url.url);
+async function persistImages(event: UrlEvent, images?: UrlEventImageInit[]) {
+	if (!images) {
+		return;
 	}
 
-	const eventsToInsert = events.filter(e => {
-		if (existingUrlsSet.has(e.url)) {
-			return false;
+	await Promise.all(images.map(async ({ url, data }) => {
+		try {
+			if (!data) {
+				const resp = await fetch(url);
+				data = await resp.arrayBuffer();
+			}
+
+
+			await prisma.urlEventImage.create({
+				data: {
+					url,
+					data: Buffer.from(data),
+					eventID: event.id,
+					contentType: '',
+				}
+			});
+		} catch (e: any) {
+			logger.warn({ url, eror: e.toString() }, 'failed to fetch image');
 		}
-		existingUrlsSet.add(e.url);
-		return true;
-	}).map(e => {
-		const { imageUrls, description, location, ...restOfTheEvent } = e;
-		// TODO: store images
+	}));
+}
 
-		return {
-			...restOfTheEvent,
-			extendedProps: JSON.stringify({
-				description,
-				location,
-				images: imageUrls,
-			}),
-		};
+async function persistNewEvents(events: JustScrapedEvent[]): Promise<UrlEvent[]> {
+	const createdEvents = await Promise.all(events.map(e => persistEvent(e)));
+
+	const actualEvents: UrlEvent[] = [];
+	createdEvents.forEach(e => {
+		if (e) {
+			actualEvents.push(e);
+		}
 	});
 
-	const newEvents = await prisma.urlEvent.createMany({
-		data: eventsToInsert,
-	});
+	return actualEvents;
+}
 
-	return newEvents;
+async function persistEvent(event: JustScrapedEvent): Promise<UrlEvent | undefined> {
+	const { images, description, location, ...restOfTheEvent } = event;
+
+	const eventToInsert = {
+		...restOfTheEvent,
+		extendedProps: JSON.stringify({
+			description,
+			location,
+		}),
+	};
+
+	logger.debug({ event }, 'inserting event into the database');
+
+	try {
+		const insertedEvent = await prisma.urlEvent.create({
+			data: eventToInsert,
+		});
+
+		await persistImages(insertedEvent, images);
+
+		return insertedEvent;
+	} catch (e: any) {
+		if (e instanceof Prisma.PrismaClientKnownRequestError) {
+			// This is the response code for a unique constraint violation - IE "the post id was already in the DB"
+			if (e.code === 'P2002') {
+				// TODO: URLs are not guarunteed to be unique! Forbidden Tickets for example can have multiple events with the same
+				// URL if it's a multi-part event. This function assumes they will be unique but this is not a safe assumption to make
+				// :(
+				logger.debug({ url: event.url }, 'skipping insertion on already-seen event');
+				return undefined;
+			}
+		}
+
+		throw e;
+	}
 }
 
 async function scrapeEventsFromSource(source: UrlSource): Promise<UrlEventInit[]> {

@@ -59,7 +59,7 @@ async function fetchEvents(query: EventsQuery): Promise<CityEventListing[]> {
 		city: source.sourceCity,
 		organizer: source.sourceName,
 		sourceType: source.sourceType,
-		events: source.events.map(event => urlEventToHttpResponse(event, source)),
+		events: source.events.map(event => urlEventToHttpResponse(event, event.images.map(i => i.id), source)),
 	}));
 
 	return response;

@@ -39,7 +39,7 @@ function convertWordpressTribeEventToFullCalendarEvent(e: any): UrlEventInit {
 		end: new Date(e.utc_end_date + 'Z'),
 		url: e.url,
 		description: e.description,
-		imageUrls: [e.image.url],
+		images: [{ url: e.image.url }],
 		location: {
 			geoJSON: geoJson(e.venue.geo_lng, e.venue.geo_lat),
 			eventVenue: {

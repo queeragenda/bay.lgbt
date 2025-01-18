@@ -57,7 +57,7 @@ function convertSquarespaceEventToFullCalendarEvent(timeZone: string, e: any, ur
 		end: actualEnd.toUTC().toJSDate(),
 		url: new URL(url).origin + e.fullUrl,
 		description: e.body,
-		imageUrls: [e.assetUrl],
+		images: [{ url: e.assetUrl }],
 		location: {
 			geoJSON: {
 				type: "Point",
