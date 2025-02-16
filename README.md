@@ -76,7 +76,4 @@ WIX_SYZYGY_COOP_SITE_ID
 
 # Funding
 Donations to keep bay.lgbt running are appreciated! Transparently, here are the costs to maintain the site:
-- Domain: $7.5/mo
-- Verce1: $20/mo
-- OpenAI: ~$2/mo
-- Google Vision OCR: ~$5/mo
+- Domain: $8/mo
