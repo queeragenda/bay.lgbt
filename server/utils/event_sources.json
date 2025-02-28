@@ -223,12 +223,6 @@
 			"city": "Oakland"
 		},
 		{
-			"name": "San Francisco Pride",
-			"username": "sanfranciscopride",
-			"context_clues": [],
-			"city": "San Francisco"
-		},
-		{
 			"name": "Passionfruit",
 			"username": "passionfruitdanceparty",
 			"context_clues": ["Dance"],
@@ -504,6 +498,11 @@
 		{
 			"name": "The Exiles",
 			"googleCalendarId": "1u1222s0kbcg8fgr4ccu3dn4b6bda0bf@import.calendar.google.com",
+			"city": "San Francisco"
+		},
+		{
+			"name": "San Francisco Pride",
+			"googleCalendarId": "c_148b2f8268f50e30ba9803c9b4e9ce4091797b22c6a8253030173be49b97bb4f@group.calendar.google.com",
 			"city": "San Francisco"
 		}
 	],
