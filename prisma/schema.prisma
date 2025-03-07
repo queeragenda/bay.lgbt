@@ -58,3 +58,10 @@ model InstagramPostScrapeRecord {
   url       String
   scrapedAt DateTime @default(now())
 }
+
+model InstagramToken {
+  id        Int      @id @default(autoincrement())
+  token     String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}

@@ -5,6 +5,16 @@ export default {
 		typeCheck: false
 	},
 
+	runtimeConfig: {
+		public: {
+			facebookClientId: process.env.FACEBOOK_CLIENT_ID || '',
+			facebookLoginRedirect: `${process.env.BASE_URL}/api/fb-login/callback` || '',
+			baseUrl: process.env.BASE_URL || '',
+		},
+
+		facebookClientSecret: process.env.FACEBOOK_CLIENT_SECRET || '',
+	},
+
 	modules: ['nuxt-security', '@artmizu/nuxt-prometheus'],
 
 	pages: true,

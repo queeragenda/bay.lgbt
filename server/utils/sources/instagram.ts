@@ -1,4 +1,3 @@
-
 import { DateTime } from 'luxon';
 
 import { logger as mainLogger } from '~~/server/utils/logger';
@@ -17,9 +16,6 @@ const logger = mainLogger.child({ provider: 'instagram' });
 if (!process.env.INSTAGRAM_BUSINESS_USER_ID) {
 	throw new Error('INSTAGRAM_BUSINESS_USER_ID not found.');
 }
-if (!process.env.INSTAGRAM_USER_ACCESS_TOKEN) {
-	throw new Error('INSTAGRAM_USER_ACCESS_TOKEN not found.');
-}
 if (!process.env.OPENAI_API_KEY) {
 	throw new Error('OPENAI_API_KEY not found.');
 }
@@ -36,13 +32,15 @@ export class InstagramScraper implements UrlScraper {
 			throw new Error(`Instagram sources must have sourceID, source ${source.id} did not have one!`);
 		}
 
+		const token = await getInstagramToken();
+
 		const igSource: InstagramSource = {
 			username: source.sourceID,
 			contextClues: JSON.parse(source.extraDataJson).contextClues,
 			...source,
 		};
 
-		const posts = await fetchPosts(igSource);
+		const posts = await fetchPosts(token, igSource);
 
 		const maybeEvents = await Promise.all(posts.map(post => handleInstagramPost(igSource, post)));
 
@@ -113,10 +111,10 @@ async function fetchOcrResults(images: InstagramImageInit[]) {
 	return result;
 }
 
-function instagramURL(sourceUsername: string) {
+function instagramURL(token: string, sourceUsername: string) {
 	return `https://graph.facebook.com/v16.0/${process.env.INSTAGRAM_BUSINESS_USER_ID}?fields=`
 		+ `business_discovery.username(${sourceUsername}){media.limit(5){caption,permalink,timestamp,media_type,media_url,children{media_url,media_type}}}`
-		+ `&access_token=${process.env.INSTAGRAM_USER_ACCESS_TOKEN}`
+		+ `&access_token=${token}`
 }
 
 export class RateLimitError extends Error {
@@ -135,9 +133,9 @@ export class RateLimitError extends Error {
 }
 
 // Fetches the five most recent posts from the given Instagram account.
-async function fetchPosts(source: InstagramSource): Promise<InstagramApiPost[]> {
+async function fetchPosts(token: string, source: InstagramSource): Promise<InstagramApiPost[]> {
 
-	const response = await fetch(instagramURL(source.username));
+	const response = await fetch(instagramURL(token, source.username));
 
 	const rateLimitHeader = response.headers.get('X-App-Usage');
 	if (rateLimitHeader) {
@@ -400,4 +398,26 @@ async function fetchImages(mediaUrls: string[]): Promise<InstagramImageInit[]> {
 			data,
 		};
 	}));
+}
+
+// Loads a token from the database, throws an error if no tokens are available.
+async function getInstagramToken(): Promise<string> {
+	const row = await prisma.instagramToken.findFirst({
+		select: {
+			token: true,
+		},
+		where: {
+			expiresAt: { gt: new Date() }
+		},
+		orderBy: {
+			expiresAt: 'desc',
+		}
+	});
+
+	if (!row) {
+		const runtimeConfig = useRuntimeConfig();
+		throw new Error(`No valid Instagram tokens! Visit ${runtimeConfig.public.baseUrl}/fb-login/ to refresh!`)
+	}
+
+	return row.token;
 }
