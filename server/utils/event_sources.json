@@ -391,6 +391,12 @@
 			"url": "https://www.eventbrite.com/o/motion-pacific-14377385101#events",
 			"id": "14377385101",
 			"city": "Santa Cruz"
+		},
+		{
+			"name": "Sour Cherry Comics",
+			"url": "https://www.eventbrite.com/o/sour-cherry-comics-49351477933#events",
+			"id": "49351477933",
+			"city": "San Francisco"
 		}
 	],
 	"eventbriteSingleEventSeries": [
