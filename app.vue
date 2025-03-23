@@ -47,9 +47,9 @@ useSeoMeta({
     <div style="display: flex; align-items: center; flex-direction: row;">
       <div class="desc">
         <a href="/about">About Us</a> | <a
-          href="https://raw.githubusercontent.com/ivyraine/bay.lgbt/main/server/utils/event_sources.json">event
+          href="https://raw.githubusercontent.com/queeragenda/bay.lgbt/main/server/utils/event_sources.json">event
           sources</a> |
-        <a href="https://github.com/ivyraine/bay.lgbt/">source code</a>
+        <a href="https://github.com/queeragenda/bay.lgbt/">source code</a>
       </div>
     </div>
   </div>

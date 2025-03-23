@@ -38,6 +38,10 @@ yes!
 - Nuxt (the JS framework) updated from version 2 to 3? I'll deal with this later, haha
 - *Ivy hibernates for a few months*
 - wow, web dev is pain (*puts up ad for co-maintainers*)
+- Lily joins the project as a co-maintainer
+  - Pulls hosting off of Vercel
+  - Re-writes large chunks of the server-side code, largely to decouple user requests for the data from the scraping process. This enables user-facing requests to always be served from our servers directly, bypassing expensive work and going faster! :3
+  - Re-states the organization's position that you should please stop using Instagram for events ten thousand times over
 
 # Development
 
