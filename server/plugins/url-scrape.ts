@@ -1,7 +1,10 @@
 import { DateTime } from "luxon";
 import { doUrlScrapes, initializeAllScrapers, scrapeInstagram } from '~~/server/utils/http';
+import eventSourcesJSON from '~~/server/utils/event_sources.json';
+import { validateCitiesInSourceFile } from "~~/utils/cities";
 
 export default defineNitroPlugin(async (nitroApp) => {
+	validateCitiesInSourceFile(eventSourcesJSON);
 	await initializeAllScrapers();
 
 	// Run the url scrape job every 10 minutes, it skips organizers that have been updated in the past hour. It's

@@ -1,6 +1,6 @@
 import { logger as mainLogger } from '~~/server/utils/logger';
 import { prisma } from '~~/server/utils/db';
-import { urlEventToHttpResponse } from '~~/server/utils/event-api';
+import { urlEventToFullcalendar } from '~~/server/utils/event-api';
 
 const logger = mainLogger.child({ provider: 'url-events' });
 
@@ -40,5 +40,5 @@ async function fetchEvent(id: number) {
 		})
 	}
 
-	return urlEventToHttpResponse(event, event.images.map(i => i.id), event.source);
+	return urlEventToFullcalendar(event, event.images.map(i => i.id), event.source);
 }

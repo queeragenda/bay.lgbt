@@ -77,29 +77,39 @@ export async function initializeAllScrapers() {
 		const sourceInits = scraper.generateSources(eventSourcesJSON);
 
 		await Promise.all(sourceInits.map(async sourceInit => {
-			const source = await prisma.urlSource.findFirst({ where: { url: sourceInit.url }, select: { id: true } });
-			if (source) {
-				// TODO: update source properties, or refactor this fn to use upsert (requires changing ID column)
-				return;
-			}
-
 			let extraDataJson = '{}';
 			if (sourceInit.extraData) {
 				extraDataJson = JSON.stringify(sourceInit.extraData);
 			}
 
+			const urlSourceProperties = {
+				url: sourceInit.url,
+				sourceName: sourceInit.sourceName,
+				sourceCity: sourceInit.sourceCity,
+				sourceType: scraper.name,
+				sourceID: sourceInit.sourceID,
+				extraDataJson,
+			}
+
+			const source = await prisma.urlSource.findFirst({ where: { url: sourceInit.url }, select: { id: true } });
+			if (source) {
+				await prisma.urlSource.update({
+					where: {
+						id: source.id,
+					},
+					data: urlSourceProperties,
+				});
+
+				return;
+			}
+
 			await prisma.urlSource.create({
 				data: {
-					url: sourceInit.url,
-					sourceName: sourceInit.sourceName,
-					sourceCity: sourceInit.sourceCity,
-					sourceType: scraper.name,
-					sourceID: sourceInit.sourceID,
 					// If this field is not initialized to 0 (or at least an hour in the past), newly created sources will not be
 					// scraped for the first hour of runtime, as the scrape job skips all sources that have been updated within
 					// the past hour.
 					lastScraped: new Date(0),
-					extraDataJson,
+					...urlSourceProperties,
 				}
 			});
 		}))

@@ -1,6 +1,7 @@
+import { EventInput } from "@fullcalendar/core";
 import { UrlEvent, UrlSource } from "@prisma/client";
 import sanitizeHtml from 'sanitize-html';
-import { ApiEvent, ApiOrganizer } from "~~/types";
+import { ApiOrganizer } from "~~/types";
 
 export function sourceToResponse(source: UrlSource): ApiOrganizer {
 	return {
@@ -13,7 +14,7 @@ export function sourceToResponse(source: UrlSource): ApiOrganizer {
 	}
 }
 
-export function urlEventToHttpResponse(event: UrlEvent, imageIds: number[], source: UrlSource): ApiEvent {
+export function urlEventToFullcalendar(event: UrlEvent, imageIds: number[], source: { sourceName: string, id: number }): EventInput {
 	let extendedProps: any = {};
 	try {
 		if (event.extendedProps) {
