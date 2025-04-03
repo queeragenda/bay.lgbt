@@ -9,7 +9,7 @@ import { OpenAiInstagramResult, instagramInitialPrompt, executePrompt } from "..
 
 import { prisma } from '~~/server/utils/db';
 import { InstagramApiPost } from "~~/types";
-import { instagramRateLimitHeader } from '../metrics';
+import { instagramRateLimitHeader, instagramTokenExpireAt } from '../metrics';
 
 const logger = mainLogger.child({ provider: 'instagram' });
 
@@ -405,6 +405,7 @@ async function getInstagramToken(): Promise<string> {
 	const row = await prisma.instagramToken.findFirst({
 		select: {
 			token: true,
+			expiresAt: true,
 		},
 		where: {
 			expiresAt: { gt: new Date() }
@@ -418,6 +419,8 @@ async function getInstagramToken(): Promise<string> {
 		const runtimeConfig = useRuntimeConfig();
 		throw new Error(`No valid Instagram tokens! Visit ${runtimeConfig.public.baseUrl}/fb-login/ to refresh!`)
 	}
+
+	instagramTokenExpireAt.set(row.expiresAt.getTime() / 1000);
 
 	return row.token;
 }

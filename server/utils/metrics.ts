@@ -40,3 +40,8 @@ export const instagramRateLimitHeader = new Gauge({
 	help: 'contents of the instagram rate limit headers (we get limited when any get to 100)',
 	labelNames: ['header'],
 });
+
+export const instagramTokenExpireAt = new Gauge({
+	name: 'instagram_token_expire_at',
+	help: 'timestamp (s since epoch) the currently used instagram token will expire',
+});
