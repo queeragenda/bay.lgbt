@@ -510,7 +510,12 @@
 			"name": "San Francisco Pride",
 			"googleCalendarId": "c_148b2f8268f50e30ba9803c9b4e9ce4091797b22c6a8253030173be49b97bb4f@group.calendar.google.com",
 			"city": "sf"
-		}
+		},
+		{
+			"name": "Braket",
+			"googleCalendarId": "c_f07a67b6839b0b5ebe0fa494b3feecb358ba8c914b5e464bf8cf9b4283a60e87@group.calendar.google.com",
+			"city": "sf"
+		},
 	],
 	"wordPressTribe": [
 		{
