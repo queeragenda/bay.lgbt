@@ -35,7 +35,10 @@ export interface EventExtendedProps {
 export interface InstagramApiPost {
 	caption?: string
 	permalink: string
+
+	// Timestamp format: 2025-12-17T01:45:39+0000
 	timestamp: string
+
 	media_type: string
 	media_url: string
 	children?: { data: InstagramApiPostChild[] }

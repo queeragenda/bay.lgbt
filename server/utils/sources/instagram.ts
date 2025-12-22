@@ -134,7 +134,6 @@ export class RateLimitError extends Error {
 
 // Fetches the five most recent posts from the given Instagram account.
 async function fetchPosts(token: string, source: InstagramSource): Promise<InstagramApiPost[]> {
-
 	const response = await fetch(instagramURL(token, source.username));
 
 	const rateLimitHeader = response.headers.get('X-App-Usage');
@@ -373,6 +372,11 @@ async function hasPostBeenScraped(source: UrlSource, post: InstagramApiPost): Pr
 */
 async function handleInstagramPost(source: InstagramSource, apiPost: InstagramApiPost): Promise<UrlEventInit | null> {
 	if (await hasPostBeenScraped(source, apiPost)) {
+		return null;
+	}
+
+	const dt = DateTime.fromISO(apiPost.timestamp);
+	if (dt && dt.diffNow().as('days') > 30) {
 		return null;
 	}
 
