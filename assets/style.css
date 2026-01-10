@@ -302,6 +302,10 @@ fc-theme-standard td,
   overflow-x: hidden;
 }
 
+.fc-list-day.fc-day.fc-day-today {
+    --fc-neutral-bg-color: lightgreen;
+}
+
 .fc .fc-daygrid-day.fc-day-today {
   /* The following is just for a simple background color */
   /* --fc-today-bg-color: yellow; */

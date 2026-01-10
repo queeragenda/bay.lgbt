@@ -111,10 +111,12 @@ const calendarOptions: Ref<CalendarOptions> = ref({
   weekNumbers: updateWeekNumbers(),
   progressiveEventRendering: true, // More re-renders; not batched. Needs further testing.
   stickyHeaderDates: true,
-  // Event handlers.
-  // Move the scrollbar to today when the switching from other views.
-  viewDidMount: moveListViewScrollbarToTodayAndColor,
-  // eventDidMount: moveListViewScrollbarToTodayAndColor,
+  dayHeaderDidMount: (args) => {
+	  if (args.isToday) {
+		  args.el.scrollIntoView({ behavior: 'auto', block: 'start', inline: 'nearest' });
+	    window.scrollTo(0, 0);
+	  }
+  },
 });
 
 const updateCalendarHeight = () => {
@@ -127,41 +129,8 @@ const updateCalendarHeight = () => {
   };
 };
 
-function moveListViewScrollbarToTodayAndColor() {
-  const listMonthViewScrollerClass = '.fc-scroller.fc-scroller-liquid';
-  const dayGridMonthViewScrollerClass = '.fc-scroller.fc-scroller-liquid-absolute';
-
-  const isInListMonthView = document.querySelector(listMonthViewScrollerClass) !== null;
-  const isInDayGridMonthView = document.querySelector(dayGridMonthViewScrollerClass) !== null;
-
-  const isInCurrentMonth = document.querySelector('.fc-list-day.fc-day.fc-day-today') !== null;
-
-  if (isInListMonthView && isInCurrentMonth) {
-    const today = document.querySelector('.fc-list-day.fc-day.fc-day-today');
-    if (!today) {
-      return;
-    }
-
-    today?.scrollIntoView({ behavior: 'instant', block: 'start', inline: 'nearest' });
-    window.scrollTo(0, 0);
-
-    today.style.setProperty('--fc-neutral-bg-color', 'lightgreen');
-  } else if (isInDayGridMonthView) {
-    const today = $('.fc-day.fc-day-today.fc-daygrid-day');
-    if (today.length <= 0) return;
-    const scrollLength = $('.fc-scroller.fc-scroller-liquid-absolute').prop("scrollHeight");
-    $(dayGridMonthViewScrollerClass).scrollTop(Math.min($(today).position().top, scrollLength));
-  }
-}
-
-// A hack to move the scrollbar to today after mounting- it is inconsistent otherwise on mobile.
-if (process.client) {
-  setTimeout(moveListViewScrollbarToTodayAndColor, 0);
-}
-
 onMounted(() => {
   window.addEventListener("resize", updateCalendarHeight);
-  moveListViewScrollbarToTodayAndColor();
 });
 
 onUpdated(() => {
