@@ -63,8 +63,8 @@ const cityEnablement = useCityEnablement();
 const url = () => {
   let urlParams: any = {};
 
-  if (props.organizer) {
-    urlParams.organizerId = props.organizer;
+  if (props.organizer && props.organizer.id) {
+    urlParams.organizerId = props.organizer.id;
   }
 
   urlParams.cities = Object.keys(cityEnablement.value).filter(cityID => cityEnablement.value[cityID]);
