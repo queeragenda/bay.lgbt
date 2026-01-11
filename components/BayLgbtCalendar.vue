@@ -90,7 +90,7 @@ const calendarOptions: Ref<CalendarOptions> = ref({
     right: 'dayGridMonth,listMonth next'
   },
   titleFormat: (info) => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Sept', 'Oct', 'Nov', 'Dec'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
     const orgName = props.organizer ? ` - ${props.organizer.name}` : '';
     const title = `${months[info.date.month]} ${info.date.year}${orgName}`;
 
