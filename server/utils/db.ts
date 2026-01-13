@@ -1,3 +1,11 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 
-export const prisma = new PrismaClient();
+const logItems: (Prisma.LogLevel | Prisma.LogDefinition)[]  = [];
+
+if (process.env.NODE_ENV === 'development') {
+	logItems.push('query');
+}
+
+export const prisma = new PrismaClient({
+	log: logItems,
+});
