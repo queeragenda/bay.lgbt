@@ -65,6 +65,8 @@ export default {
 	css: ['vue-final-modal/style.css'],
 	compatibilityDate: '2025-01-14',
 
+	ssr: true,
+
 	nitro: {
 		routeRules: {
 			'/api/events/': { cache: { swr: true, maxAge: 60, staleMaxAge: 60 } }
