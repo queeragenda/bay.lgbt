@@ -74,6 +74,14 @@ async function fetchEvents(query: EventsQuery): Promise<EventInput[]> {
 		};
 	}
 
+	let include = {};
+	if (query.loadFullEvent) {
+		include = {
+			images: { select: { id: true } },
+		};
+	}
+
+
 	const events = await prisma.urlEvent.findMany({
 		where: {
 			sourceId: query.organizerId,
@@ -83,13 +91,13 @@ async function fetchEvents(query: EventsQuery): Promise<EventInput[]> {
 			start: 'asc',
 		},
 		include: {
-			images: { select: { id: true } },
 			source: { select: { sourceName: true } },
+			...include,
 		},
 	});
 
 	const response = events
-		.map(event => urlEventToFullcalendar(event, event.images.map(i => i.id), { sourceName: event.source.sourceName, id: event.sourceId }))
+		.map(event => urlEventToFullcalendar(event, [], { sourceName: event.source.sourceName, id: event.sourceId }))
 		.map(e => {
 			if (!query.loadFullEvent) {
 				e.extendedProps = undefined;
