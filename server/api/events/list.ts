@@ -27,9 +27,10 @@ export default defineEventHandler(async (event) => {
 
 interface EventsQuery {
 	organizerId?: number
-	cities?: string[],
+	cities?: string[]
 	start?: DateTime
 	end?: DateTime
+	loadFullEvent: boolean
 }
 
 function extractQuery(event: H3Event): EventsQuery {
@@ -50,6 +51,8 @@ function extractQuery(event: H3Event): EventsQuery {
 	if (typeof query.cities === 'string') {
 		eventQuery.cities = query.cities.split(',');
 	}
+
+	eventQuery.loadFullEvent = query.format === 'full';
 
 	return eventQuery;
 }
@@ -88,9 +91,8 @@ async function fetchEvents(query: EventsQuery): Promise<EventInput[]> {
 	const response = events
 		.map(event => urlEventToFullcalendar(event, event.images.map(i => i.id), { sourceName: event.source.sourceName, id: event.sourceId }))
 		.map(e => {
-			// You don't need to load every event description here
-			if (e.extendedProps) {
-				e.extendedProps.description = null;
+			if (!query.loadFullEvent) {
+				e.extendedProps = undefined;
 			}
 
 			return e;
