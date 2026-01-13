@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <!--<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.20/index.global.min.js"></script>-->
+        <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.20/index.global.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.20/index.global.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/list@6.1.20/index.global.min.js"></script>
+        <link rel="stylesheet" href="/style.css" crossorigin="" />
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const getWindowHeight = () => {
+                    return window.innerHeight;
+                };
+
+                const getWindowWidth = () => {
+                    return window.innerWidth;
+                };
+
+                // const calendarHeight = useCookie('calendarHeight', {
+                //   sameSite: 'strict',
+                //   default: () => 2000, maxAge: 60 * 60 * 24 * 365
+                // });
+                // if (process.client) calendarHeight.value = window.innerHeight;
+                // const pageWidth = useCookie('pageWidth', {
+                //   sameSite: 'strict',
+                //   default: () => 1000, maxAge: 60 * 60 * 24 * 365
+                // });
+                // if (process.client) pageWidth.value = window.innerWidth;
+
+                // const isUsingDayMaxEventRows = useState('isUsingDayMaxEventRows', () => true);
+
+                const updateWeekNumbers = () => {
+                    return getWindowWidth() < 350 ? false : true;
+                };
+                // -1 indicates that there is no limit.
+                // const updateDayMaxEventRows = () => { return isUsingDayMaxEventRows.value ? -1 : Math.floor(getWindowHeight() / 75) };
+
+                // const { open: openFilterModal, close: closeFilterModal } = useModal({
+                //   component: FilterModal,
+                //   attrs: {
+                //     title: 'County/City Filter',
+                //     onConfirm() {
+                //       closeFilterModal();
+                //       // This is required bc all of this stuff isn't "reactive".
+                //       calendarOptions.value.events = url();
+                //     },
+                //   },
+                // });
+
+                const url = () => {
+                    let urlParams = {};
+
+                    urlParams.cities =
+                        "marin-county,sf-county,alameda-county,santa-clara-county,santa-cruz-county,sf,oakland,berkeley,san-jose,santa-cruz";
+
+                    return (
+                        "/api/events/list?" +
+                        new URLSearchParams(urlParams).toString()
+                    );
+                };
+
+                const calendarOptions = {
+                    // plugins: [dayGridPlugin, timeGridPlugin, listPlugin],
+                    initialView:
+                        getWindowWidth() <= 600 ? "listMonth" : "dayGridMonth",
+                    customButtons: {
+                        filter: {
+                            text: "filter",
+                            // click: openFilterModal,
+                        },
+                    },
+                    // initialDate: props.year_month ? `${props.year_month}-01` : undefined,
+                    events: url(),
+                    headerToolbar: {
+                        left: "prev today,filter",
+                        center: "title",
+                        right: "dayGridMonth,listMonth next",
+                    },
+                    titleFormat: (info) => {
+                        const months = [
+                            "Jan",
+                            "Feb",
+                            "Mar",
+                            "Apr",
+                            "May",
+                            "Jun",
+                            "Jul",
+                            "Aug",
+                            "Sept",
+                            "Oct",
+                            "Nov",
+                            "Dec",
+                        ];
+                        // const orgName = props.organizer ? ` - ${props.organizer.name}` : '';
+                        const title = `${months[info.date.month]} ${info.date.year}`;
+
+                        if (info.date.month === 5) {
+                            return `🏳️‍🌈 ${title} 🏳️‍🌈`;
+                        }
+
+                        return title;
+                    },
+                    buttonText: {
+                        month: "grid", // Feels clearar than 'month' and 'list'
+                        list: "list",
+                    },
+                    nowIndicator: true,
+                    height: "100vh",
+                    // dayMaxEventRows: updateDayMaxEventRows(),
+                    navLinks: true,
+                    weekNumbers: updateWeekNumbers(),
+                    progressiveEventRendering: true, // More re-renders; not batched. Needs further testing.
+                    stickyHeaderDates: true,
+                    dayHeaderDidMount: (args) => {
+                        if (args.isToday) {
+                            args.el.scrollIntoView({
+                                behavior: "auto",
+                                block: "start",
+                                inline: "nearest",
+                            });
+                            window.scrollTo(0, 0);
+                        }
+                    },
+                };
+
+                console.log(calendarOptions);
+
+                // const updateCalendarHeight = () => {
+                //   pageWidth.value = getWindowWidth();
+                //   calendarHeight.value = getWindowHeight();
+                //   calendarOptions.value = {
+                //     ...calendarOptions.value,
+                //     weekNumbers: getWindowWidth() < 350 ? false : true,
+                //     dayMaxEventRows: updateDayMaxEventRows()
+                //   };
+                // };
+
+                // onMounted(() => {
+                //   window.addEventListener("resize", updateCalendarHeight);
+                // });
+
+                // onUpdated(() => {
+                // });
+
+                // onUnmounted(() => {
+                //   // if (process.client) window.removeEventListener('resize', updateWeekNumbers);
+                // });
+
+                var calendarEl = document.getElementById("calendar");
+                var calendar = new FullCalendar.Calendar(
+                    calendarEl,
+                    calendarOptions,
+                );
+                calendar.render();
+            });
+        </script>
+    </head>
+    <body>
+        <div class="page">
+            <div class="page-header">
+                <div class="title">
+                    <NuxtLink to="/">bay.lgbt</NuxtLink>
+                </div>
+                <div class="blurb">
+                    A communal board for LGBT events all around SF bay, updated
+                    25/7!
+                </div>
+            </div>
+
+            <div id="calendar"></div>
+
+            <div
+                style="display: flex; align-items: center; flex-direction: row"
+            >
+                <div class="desc">
+                    <a href="/about">About Us</a> |
+                    <a
+                        href="https://raw.githubusercontent.com/queeragenda/bay.lgbt/main/server/utils/event_sources.json"
+                        >event sources</a
+                    >
+                    |
+                    <a href="https://github.com/queeragenda/bay.lgbt/"
+                        >source code</a
+                    >
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

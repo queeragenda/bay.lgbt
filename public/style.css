@@ -1,0 +1,517 @@
+*,
+*:before,
+*:after {
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+@font-face {
+  font-family: 'ChicagoFLF';
+  src: url('/assets/ChicagoFLF.ttf') format('truetype');
+  /* Safari, Android, iOS */
+}
+
+@font-face {
+  font-family: 'LDFComicSans';
+  src: url('/assets/LDFComicSans.ttf') format('truetype');
+}
+
+/* Takes precedence over FullCalendar's  styling. */
+:root {
+  /* linear rainbow gradient, pastel */
+  background: linear-gradient(rgb(245, 169, 184), rgb(255, 255, 255), rgb(91, 206, 250));
+  background-attachment: fixed;
+  --button-box-shadow:
+    inset -1px -1px 0px 0px #777,
+    inset -2px -2px 0px 0px #aaa,
+    inset 1px 1px 0px 0px #ddd,
+    inset 2px 2px 0px 0px #fff;
+  --button-hover-bezel:
+    0 0 0 1px #aaa,
+    0 0 0 2px #ddd,
+    0 0 0 3px #000;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Highest precedence */
+:root .fc .fc-h-event {
+  /* Set .fc .fc-daygrid-event to margin-top 0 */
+  /* background: red; */
+  /* margin-top: 5px; */
+}
+:root .fc .fc-list-table td {
+  padding: 6px 14px;
+}
+html,
+body {
+  margin-top: 0;
+  background-repeat: repeat;
+  margin: 0;
+  height: 100%;
+  font-family: 'ChicagoFLF', 'Times New Roman', 'Georgia', serif;
+  font-size: 12px;
+  font-weight: normal;
+}
+
+a {
+  color: #000;
+}
+
+:focus {
+  outline: none;
+}
+
+::-moz-focus-inner {
+  border: 0;
+}
+
+/* Window layout */
+
+.page {
+  height: 95vh;
+}
+
+fc-theme-standard td,
+.fc-theme-standard th {
+  border: 1px solid #111;
+}
+
+.fc-header-toolbar {
+  text-align: center;
+}
+
+.fc .fc-toolbar.fc-header-toolbar {
+  margin-bottom: min(0.75vh, 4px) !important;
+}
+
+.fc-toolbar-chunk {
+  padding-top: 4px;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+
+.fc-media-screen {
+  margin-top: 1vw;
+  margin-left: 1vw;
+  margin-right: 1vw;
+}
+
+.fc-media-screen,
+.fc .fc-popover,
+.popper-box-inner {
+  z-index: 2;
+  font-size: 12px;
+  font-weight: normal;
+  border: 1px solid #111;
+  background: #ccc;
+  box-shadow:
+    1px 2px #111,
+    inset 1px 1px 0px 0px #fff,
+    inset -1px -1px 0px 0px #999;
+}
+
+/* The daily content */
+.fc-view-harness,
+.fc-popover-body {
+  margin: 2px 4px 4px 4px;
+  border: 1px solid #111;
+  background-color: #ddd;
+  box-shadow:
+    -1px -1px 0px 0px #999,
+    1px 1px 0px 0px #fff,
+    inset 1px 1px 0px 0px #fff,
+    inset -1px -1px 0px 0px #999;
+}
+
+.fc-header-toolbar,
+.fc-popover-header {
+  width: 100%;
+  text-align: center;
+  font-size: inherit;
+  font-weight: inherit;
+  background-size: 3px 2px;
+  margin: 0 0 0 0;
+}
+
+.content .icon {
+  text-align: center;
+  margin: 1em 0;
+}
+
+.content ul {
+  list-style-type: none;
+  margin: 2px 0 1.5em 0;
+  padding: 0 0 0 2em;
+  font-size: 12px;
+}
+
+.footer {
+  width: 400px;
+  text-align: center;
+  margin: 2em auto 0;
+  font-size: 12px;
+}
+
+.control-box {
+  position: absolute;
+  top: 3px;
+  padding: 1px;
+  background-color: #222;
+  box-shadow:
+    inset -1px -1px 0px 0px #fff,
+    inset 1px 1px 0px 0px #888;
+}
+
+.close-box.control-box {
+  left: 4px;
+}
+
+.control-box-inner,
+.popper-box-inner input {
+  transform: scale(1.55);
+  background-image:
+    linear-gradient(to bottom right, #999, #aaa, #bbb, #ccc, #ddd, #eee, #fff);
+  border: 1px solid #222;
+  box-shadow:
+    inset 1px 1px 0px 0px #ccc,
+    inset -1px -1px 0px 0px #888;
+  text-indent: -99999em;
+}
+
+.popper-box-inner .county-input {
+  margin: 2px;
+  font-size: 12px;
+  height: 20px;
+  width: 20px;
+  text-align: center;
+  text-indent: -1.6px;
+  /* background-image:
+    linear-gradient(to bottom right, #999, #aaa, #bbb, #ccc, #ddd, #eee, #fff); */
+  border: 1px solid #222;
+}
+
+.popper-box-inner .county-input:active {
+  height: 20px;
+  width: 20px;
+  text-align: center;
+  /* Start transition for longer press. Note: since the popper itself has a transition it is probably using that. */
+  transition: 0s;
+  background-image:
+    linear-gradient(to bottom right, #f00, #f80, #ff0, #0f0, #0ff, #00f, #80f, #f00);
+}
+.control-box-inner:active {
+  box-shadow: none;
+}
+
+.zoom-box.control-box {
+  right: 20px;
+}
+
+.zoom-box-inner {
+  height: 6px;
+  width: 7px;
+  border-bottom: 1px solid #000;
+  border-right: 1px solid #000;
+}
+
+.windowshade-box.control-box {
+  right: 4px;
+}
+
+.windowshade-box-inner {
+  margin-top: 3px;
+  height: 3px;
+  border-top: 1px solid #000;
+  border-bottom: 1px solid #000;
+}
+
+/* Also copied in components/OldSchoolButton.css */
+.fc .fc-button-primary,
+.fc .fc-button-primary:not(:disabled),
+.popper-box-inner button {
+  color: black;
+  font-family: 'ChicagoFLF';
+  font-size: min(3.5vw, 1.2em);
+  background-color: #dedede;
+  display: inline-block;
+  margin-bottom: 0px;
+  border-radius: 3px;
+  border: 1px solid #000;
+  box-shadow: var(--button-box-shadow);
+}
+
+.fc-button:hover {
+  /* box-shadow:
+    var(--button-box-shadow),
+    var(--button-hover-bezel); */
+}
+
+.fc-button-active {
+  color: #fff;
+  box-shadow:
+    var(--button-hover-bezel),
+    inset -1px -1px 0px 0px #888,
+    inset -2px -2px 0px 0px #777,
+    inset 1px 1px 0px 0px #444,
+    inset 2px 2px 0px 0px #555;
+}
+
+/* Hide only visually, but have it available for screenreaders & for SEO purposes. See h5bp.com/v */
+.visuallyhidden {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+}
+
+.clearfix:before,
+.clearfix:after {
+  content: " ";
+  display: table;
+}
+
+.clearfix:after {
+  clear: both;
+}
+
+.fc-daygrid-day {
+  --fc-border-color: black;
+}
+
+.fc .fc-toolbar-title {
+  font-size: min(5vw, 1.75em);
+}
+
+/* Night-time seems to be different? */
+.fc-h-event .fc-event-main {
+  color: white;
+}
+
+/* Allow multi-day events to overflow to other days */
+.fc .fc-h-event .fc-event-time {
+  overflow-x: hidden;
+}
+
+.fc-list-day.fc-day.fc-day-today {
+    --fc-neutral-bg-color: lightgreen;
+}
+
+.fc .fc-daygrid-day.fc-day-today {
+  /* The following is just for a simple background color */
+  /* --fc-today-bg-color: yellow; */
+  background:
+    repeating-linear-gradient(45deg,
+      transparent,
+      transparent 10px,
+      #eee 10px,
+      #eee 20px),
+    linear-gradient(to bottom,
+      white,
+      white);
+}
+
+.page-header {
+    display: flex;
+    flex-direction:row;
+    position:relative;
+    align-content: center;
+    justify-content: space-between;
+}
+
+.title a {
+    color: white;
+    text-decoration: none !important;
+}
+
+.title {
+    color: white;
+    text-decoration: none !important;
+    padding-top: min(1vw, 1.75em);
+    padding-bottom: min(1.5vw, 1.75em);
+    padding-left: min(1vw, 1.75em);
+    font-size: min(5vw, 3em);
+    font-family: sans-serif;
+    letter-spacing: 0.15rem;
+    text-transform: uppercase;
+    color: #fff;
+    text-shadow: 0 min(0.25vw, 3.5px) #ef3550,
+        0 min(0.5vw, 7px) #f48fb1,
+        0 min(0.75vw, 10.5px) #7e57c2,
+        0 min(1vw, 14px) #2196f3,
+        0 min(1.25vw, 17.5px) #26c6da,
+        0 min(1.5vw, 21px) #43a047,
+        0 min(1.75vw, 24.5px) #eeff41,
+        0 min(2vw, 28px) #f9a825,
+        0 min(2.25vw, 31.5px) #ff5722;
+  }
+
+.blurb {
+  font-family: 'LDFComicSans';
+  font-size: min(4vw, 1.75em);
+
+  padding-left: min(1vw, 1.75em);
+  padding-right: min(1vw, 1.75em);
+
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.desc {
+    font-family: 'LDFComicSans', serif;
+    font-size: min(4vw, 1.4em);
+    opacity: 5;
+}
+
+.cat {
+  bottom: 10vh;
+  overflow: hidden;
+}
+
+.gifs {
+  /* padding-top: 2vh; */
+}
+body.no-scroll {
+  overflow: hidden;
+}
+.popper-box-wrapper {
+  display: flex;
+  justify-content: center;
+    align-items: center;
+}
+
+.popper-box-inner {
+  display: flex;
+  padding: 1rem;
+  margin-left: 1rem;
+  margin-right: 1rem;
+  margin-top: 0.5rem;
+  flex-direction: column;
+  max-width: 36rem;
+  border-radius: 0.5rem;
+  border-width: 1px;
+  overflow: auto;
+  max-height: 90%;
+}
+
+.popper-box-wrapper .popper-box-inner .county-header {
+  display: flex;
+  flex-direction: column;
+  margin-top: 2px;
+}
+.popper-box-wrapper .popper-box-inner .city-header {
+  vertical-align: middle;
+  float: right;
+  line-height: 20px;
+  margin-left: 25px;
+}
+
+.popper-box-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.popper-box-inner h1 {
+  font-size: 1.375rem;
+}
+
+.popper-box-inner .city-header input {
+  font-size: 13px;
+  vertical-align: middle;
+  line-height: 20px;
+  margin-right: 6px;
+}
+
+.popper-box-inner .bottom {
+  margin-top: 10px;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  column-gap: 2em;
+}
+
+.fc .fc-h-event .fc-event-time {
+  /* Fix time getting cut off for multi-day events */
+  overflow: visible;
+}
+
+.popper-box-inner .bottom button {
+  font-size: 14px;
+}
+.popper-box-inner .bottom button:active {
+  transition: 0s 1s;
+  background-image:
+    linear-gradient(to bottom right, #f00, #f80, #ff0, #0f0, #0ff, #00f, #80f, #f00);
+}
+.fc-list-day-cushion .fc-cell-shaded {
+  --fc-neutral-bg-color: blue;
+}
+
+:root .fc .fc-daygrid-day-number {
+  text-decoration: dashed underline;
+}
+
+/* Styles for the image container */
+.image-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Shared styles for all images */
+.event-image, .cont-img, .cont-img-mid {
+  height:auto;
+  width:100%;
+  object-fit: cover;
+  border-radius: 2%;
+  border: 2px solid var(--button-hover);
+  margin: auto; /* Ensure the image is aligned at center */
+}
+
+.cont-img, .cont-img-mid {
+  max-width:100%;
+  width: auto;
+  vertical-align: top;
+  margin:2px
+}
+
+.cont-img-mid {
+  vertical-align: middle;
+}
+
+/* Styles for image-wrapper when there is only one image */
+.image-container .image-wrapper:first-of-type:nth-last-of-type(1) {
+  width: 95%;
+}
+
+/* Styles for the image wrappers when there are two images */
+.image-container .image-wrapper:first-of-type:nth-last-of-type(2),
+.image-container .image-wrapper:last-of-type:nth-of-type(2) {
+  width: calc(48% - 5px); /* take the margin into account */
+  margin-right: 5px;
+  margin-left: 5px;
+  box-sizing: border-box;
+}
+
+/* Styles for the image wrappers when there are three images */
+.image-container .image-wrapper:nth-of-type(n+2):nth-of-type(-n+3) {
+  width: calc(48% - 10px); /* take the margin into account */
+  margin-right: 5px;
+  margin-left: 5px;
+  box-sizing: border-box;
+}
+
+.image-container .image-wrapper:first-of-type:nth-last-of-type(3) {
+  width: 95%;
+}
