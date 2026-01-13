@@ -85,7 +85,16 @@ async function fetchEvents(query: EventsQuery): Promise<EventInput[]> {
 		},
 	});
 
-	const response = events.map(event => urlEventToFullcalendar(event, event.images.map(i => i.id), { sourceName: event.source.sourceName, id: event.sourceId }));
+	const response = events
+		.map(event => urlEventToFullcalendar(event, event.images.map(i => i.id), { sourceName: event.source.sourceName, id: event.sourceId }))
+		.map(e => {
+			// You don't need to load every event description here
+			if (e.extendedProps) {
+				e.extendedProps.description = null;
+			}
+
+			return e;
+		});
 
 	return response;
 }
