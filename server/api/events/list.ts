@@ -21,16 +21,16 @@ export default defineEventHandler(async (event) => {
 		throw createError({
 			statusCode: 500,
 			statusMessage: '' + error,
-		})
+		});
 	}
 });
 
 interface EventsQuery {
-	organizerId?: number
-	cities?: string[]
-	start?: DateTime
-	end?: DateTime
-	loadFullEvent: boolean
+	organizerId?: number;
+	cities?: string[];
+	start?: DateTime;
+	end?: DateTime;
+	loadFullEvent: boolean;
 }
 
 function extractQuery(event: H3Event): EventsQuery {
@@ -70,7 +70,7 @@ async function fetchEvents(query: EventsQuery): Promise<EventInput[]> {
 		eventsWhere.source = {
 			sourceCity: {
 				in: query.cities,
-			}
+			},
 		};
 	}
 
@@ -81,9 +81,17 @@ async function fetchEvents(query: EventsQuery): Promise<EventInput[]> {
 		};
 	}
 
-
 	const events = await prisma.urlEvent.findMany({
 		where: {
+			OR: [
+				// Show events which have either:
+				// - No TTL
+				// - A TTL which has not yet expired (is in the future)
+				// - A TTL which is not/was not expired at the time of the event's start (events which were in the past and unexpired at the time they began)
+				{ hideAfter: null },
+				{ hideAfter: { gte: new Date() } },
+				{ hideAfter: { gte: prisma.urlEvent.fields.start } },
+			],
 			sourceId: query.organizerId,
 			...eventsWhere,
 		},
@@ -97,8 +105,8 @@ async function fetchEvents(query: EventsQuery): Promise<EventInput[]> {
 	});
 
 	const response = events
-		.map(event => urlEventToFullcalendar(event, [], { sourceName: event.source.sourceName, id: event.sourceId }))
-		.map(e => {
+		.map((event) => urlEventToFullcalendar(event, [], { sourceName: event.source.sourceName, id: event.sourceId }))
+		.map((e) => {
 			if (!query.loadFullEvent) {
 				e.extendedProps = undefined;
 			}

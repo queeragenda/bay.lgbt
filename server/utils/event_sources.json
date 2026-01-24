@@ -531,7 +531,8 @@
 		{
 			"name": "SF Eagle",
 			"url": "https://sf-eagle.com/wp-json/tribe/events/v1/events?per_page=50",
-			"city": "sf"
+			"city": "sf",
+			"unseen_event_ttl": "P7D"
 		}
 	],
 	"tockify": [

@@ -1,6 +1,8 @@
 import { logger as mainLogger } from '~~/server/utils/logger';
 import { UrlSource } from '@prisma/client';
 import { SourceFile, UrlEventInit, UrlScraper, UrlSourceInit } from '../http';
+import { Duration } from 'luxon';
+import { parseUnseenEventTtl } from '../event-ttl';
 
 const logger = mainLogger.child({ provider: 'wordpress-tribe' });
 
@@ -27,6 +29,7 @@ export class WordpressTribeScraper implements UrlScraper {
 			url: source.url,
 			sourceName: source.name,
 			sourceCity: source.city,
+			unseenEventTTL: parseUnseenEventTtl(source),
 		}))
 	}
 }

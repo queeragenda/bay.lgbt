@@ -14,15 +14,16 @@ datasource db {
 // Stored URLs should not include things like API keys, this should be added to
 // the URL at the time the fetch request is placed.
 model UrlSource {
-  id             Int      @id @default(autoincrement())
-  sourceID       String?
-  sourceType     String
-  sourceName     String
-  sourceCity     String
-  url            String
-  lastScraped    DateTime
-  etagLastScrape String?
-  extraDataJson  String   @default("{}")
+  id                 Int      @id @default(autoincrement())
+  sourceID           String?
+  sourceType         String
+  sourceName         String
+  sourceCity         String
+  url                String
+  lastScraped        DateTime
+  etagLastScrape     String?
+  unseenEventTTLSecs Int?
+  extraDataJson      String   @default("{}")
 
   events UrlEvent[]
 }
@@ -34,8 +35,10 @@ model UrlEvent {
   title         String
   start         DateTime
   end           DateTime
-  url           String   @unique
-  createdAt     DateTime @default(now())
+  url           String    @unique
+  createdAt     DateTime  @default(now())
+  lastSeen      DateTime  @default(now())
+  hideAfter     DateTime?
   extendedProps String?
 
   source UrlSource       @relation(fields: [sourceId], references: [id])

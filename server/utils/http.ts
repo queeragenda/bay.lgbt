@@ -1,5 +1,5 @@
 import { Prisma, UrlEvent, UrlEventImage, UrlSource } from "@prisma/client";
-import { DateTime } from "luxon";
+import { DateTime, Duration } from "luxon";
 import { prisma } from "./db";
 import { EventbriteScraper, EventbriteSingleScraper } from "./sources/eventbrite";
 import { ForbiddenTicketsScraper } from "./sources/forbidden-tickets";
@@ -41,6 +41,7 @@ export interface UrlSourceInit {
 	sourceCity: string
 	sourceID?: string
 	extraData?: any
+	unseenEventTTL?: Duration
 }
 
 export interface UrlEventInit {
@@ -82,12 +83,18 @@ export async function initializeAllScrapers() {
 				extraDataJson = JSON.stringify(sourceInit.extraData);
 			}
 
+			let unseenEventTTLSecs;
+			if (sourceInit.unseenEventTTL) {
+				unseenEventTTLSecs = Math.floor(sourceInit.unseenEventTTL.toMillis() / 1000);
+			}
+
 			const urlSourceProperties = {
 				url: sourceInit.url,
 				sourceName: sourceInit.sourceName,
 				sourceCity: sourceInit.sourceCity,
 				sourceType: scraper.name,
 				sourceID: sourceInit.sourceID,
+				unseenEventTTLSecs,
 				extraDataJson,
 			}
 
@@ -266,12 +273,45 @@ async function persistNewEvents(source: UrlSource, events: UrlEventInit[]): Prom
 	return actualEvents;
 }
 
+function computeHideAfter(source: UrlSource): Date | null {
+	if (!source.unseenEventTTLSecs) {
+		return null;
+	}
+
+	const ttl = Duration.fromObject({ seconds: source.unseenEventTTLSecs });
+
+	return DateTime.now().plus(ttl).toJSDate();
+}
+
+// If a given event has already been scraped in the past, update it with new data from the most recent scrape
+async function updatePersistedEvent(source: UrlSource, event: UrlEventInit) {
+	const { images, description, location, ...restOfTheEvent } = event;
+
+	const eventToUpdate = {
+		...restOfTheEvent,
+		lastSeen: new Date(),
+		hideAfter: computeHideAfter(source),
+		extendedProps: JSON.stringify({
+			description,
+			location,
+		}),
+	};
+
+	await prisma.urlEvent.update({
+		where: {
+			url: event.url,
+		},
+		data: eventToUpdate,
+	})
+}
+
 async function persistEvent(source: UrlSource, event: UrlEventInit): Promise<UrlEvent | undefined> {
 	const { images, description, location, ...restOfTheEvent } = event;
 
 	const eventToInsert = {
 		...restOfTheEvent,
 		sourceId: source.id,
+		hideAfter: computeHideAfter(source),
 		extendedProps: JSON.stringify({
 			description,
 			location,
@@ -296,6 +336,7 @@ async function persistEvent(source: UrlSource, event: UrlEventInit): Promise<Url
 				// URL if it's a multi-part event. This function assumes they will be unique but this is not a safe assumption to make
 				// :(
 				logger.debug({ url: event.url }, 'skipping insertion on already-seen event');
+				await updatePersistedEvent(source, event);
 			}
 		} else if (e instanceof Prisma.PrismaClientValidationError) {
 			logger.warn({ url: event.url, error: e.toString(), stack: e.stack, sourceType: source.sourceType, source: source.sourceName, event: eventToInsert }, 'skipping insertion due to event not matching db schema, this may be a bug!');
