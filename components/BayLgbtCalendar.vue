@@ -105,7 +105,7 @@ const calendarOptions: Ref<CalendarOptions> = ref({
     list: 'list'
   },
   nowIndicator: true,
-  height: '100vh',
+  height: '90vh',
   dayMaxEventRows: updateDayMaxEventRows(),
   navLinks: true,
   weekNumbers: updateWeekNumbers(),
