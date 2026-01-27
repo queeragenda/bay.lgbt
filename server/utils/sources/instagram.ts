@@ -340,6 +340,14 @@ async function runInferenceOnPost(
 		if (!generatedJson) {
 			return null;
 		}
+
+		// Todo: run verification prompt
+
+		const result = postProcessOpenAiInstagramResponse(generatedJson);
+
+		logger.debug({ username: source.username, postUrl: post.permalink, result }, 'Performed inference on post');
+
+		return result;
 	} catch (e) {
 		logger.error(
 			{ sourceName: source.username, postUrl: post.permalink, error: e },
@@ -348,14 +356,6 @@ async function runInferenceOnPost(
 
 		throw e;
 	}
-
-	// Todo: run verification prompt
-
-	const result = postProcessOpenAiInstagramResponse(generatedJson);
-
-	logger.debug({ username: source.username, postUrl: post.permalink, result }, 'Performed inference on post');
-
-	return result;
 }
 
 function getMediaUrls(post: InstagramApiPost): string[] | null {
