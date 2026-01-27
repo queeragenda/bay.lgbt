@@ -161,6 +161,19 @@ async function fetchPosts(token: string, source: InstagramSource): Promise<Insta
 		throw new Error(responseBody.error.message);
 	}
 
+	if (!responseBody.business_discovery || !responseBody.business_discovery.media || !responseBody.business_discovery.media.data) {
+		logger.warn(
+			{
+				sourceType: source.sourceType,
+				source: source.sourceName,
+				response: responseBody,
+			},
+			'Got invalid API response from Instagram',
+		)
+
+		return [];
+	}
+
 	return responseBody.business_discovery.media.data;
 }
 
