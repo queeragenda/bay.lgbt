@@ -113,7 +113,7 @@ async function fetchOcrResults(images: InstagramImageInit[]) {
 
 function instagramURL(token: string, sourceUsername: string) {
 	return `https://graph.facebook.com/v16.0/${process.env.INSTAGRAM_BUSINESS_USER_ID}?fields=`
-		+ `business_discovery.username(${sourceUsername}){media.limit(5){caption,permalink,timestamp,media_type,media_url,children{media_url,media_type}}}`
+		+ `business_discovery.username(${sourceUsername}){media.limit(5){caption,permalink,timestamp,media_type,media_url,children{media_url,media_type}}}&media_type=IMAGE`
 		+ `&access_token=${token}`
 }
 
