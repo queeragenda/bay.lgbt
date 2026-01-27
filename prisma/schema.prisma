@@ -25,7 +25,8 @@ model UrlSource {
   unseenEventTTLSecs Int?
   extraDataJson      String   @default("{}")
 
-  events UrlEvent[]
+  events                     UrlEvent[]
+  instagramPostScrapeRecords InstagramPostScrapeRecord[]
 }
 
 model UrlEvent {
@@ -60,6 +61,9 @@ model InstagramPostScrapeRecord {
   id        String   @id
   url       String
   scrapedAt DateTime @default(now())
+
+  sourceId Int?
+  source   UrlSource? @relation(fields: [sourceId], references: [id])
 }
 
 model InstagramToken {

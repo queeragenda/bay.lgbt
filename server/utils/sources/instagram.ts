@@ -377,6 +377,15 @@ async function handleInstagramPost(source: InstagramSource, apiPost: InstagramAp
 
 	const dt = DateTime.fromISO(apiPost.timestamp);
 	if (dt && dt.diffNow().as('days') > 30) {
+		logger.warn(
+			{
+				sourceType: source.sourceType,
+				source: source.sourceName,
+				url: apiPost.permalink,
+				postTime: dt,
+			},
+			'Skipping Instagram scrape for event more than 30d in the past',
+		)
 		return null;
 	}
 
