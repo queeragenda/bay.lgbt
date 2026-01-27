@@ -14,16 +14,17 @@ datasource db {
 // Stored URLs should not include things like API keys, this should be added to
 // the URL at the time the fetch request is placed.
 model UrlSource {
-  id                 Int      @id @default(autoincrement())
-  sourceID           String?
-  sourceType         String
-  sourceName         String
-  sourceCity         String
-  url                String
-  lastScraped        DateTime
-  etagLastScrape     String?
-  unseenEventTTLSecs Int?
-  extraDataJson      String   @default("{}")
+  id                    Int      @id @default(autoincrement())
+  sourceID              String?
+  sourceType            String
+  sourceName            String
+  sourceCity            String
+  url                   String
+  lastScraped           DateTime
+  etagLastScrape        String?
+  unseenEventTTLSecs    Int?
+  extraDataJson         String   @default("{}")
+  extractImagesFromBody Boolean  @default(false)
 
   events                     UrlEvent[]
   instagramPostScrapeRecords InstagramPostScrapeRecord[]

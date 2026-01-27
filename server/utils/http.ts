@@ -42,6 +42,7 @@ export interface UrlSourceInit {
 	sourceID?: string
 	extraData?: any
 	unseenEventTTL?: Duration
+	extractImagesFromBody?: boolean
 }
 
 export interface UrlEventInit {
@@ -95,6 +96,7 @@ export async function initializeAllScrapers() {
 				sourceType: scraper.name,
 				sourceID: sourceInit.sourceID,
 				unseenEventTTLSecs,
+				extractImagesFromBody: sourceInit.extractImagesFromBody,
 				extraDataJson,
 			}
 

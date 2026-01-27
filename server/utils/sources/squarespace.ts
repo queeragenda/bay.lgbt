@@ -2,6 +2,7 @@ import { DateTime } from 'luxon';
 import { logger as mainLogger } from '~~/server/utils/logger';
 import { UrlSource } from '@prisma/client';
 import { fetchCached, SourceFile, UrlEventInit, UrlScraper, UrlSourceInit } from '../http';
+import { extractImagesFromPost } from '../event-images';
 
 const logger = mainLogger.child({ provider: 'squarespace' });
 
@@ -18,7 +19,7 @@ export class SquarespaceScraper implements UrlScraper {
 				return [];
 			}
 
-			return events.map((event: any) => convertSquarespaceEventToFullCalendarEvent(squarespaceJson.website.timeZone, event, source.url, source.sourceName));
+			return events.map((event: any) => convertSquarespaceEventToFullCalendarEvent(source, squarespaceJson.website.timeZone, event, source.url, source.sourceName));
 		});
 	}
 
@@ -27,11 +28,17 @@ export class SquarespaceScraper implements UrlScraper {
 			url: source.url,
 			sourceName: source.name,
 			sourceCity: source.city,
+			extractImagesFromBody: source.extract_images_from_html_body,
 		}));
 	}
 }
 
-function convertSquarespaceEventToFullCalendarEvent(timeZone: string, e: any, url: string, sourceName: string): UrlEventInit {
+function convertSquarespaceEventToFullCalendarEvent(source: UrlSource, timeZone: string, e: any, url: string, sourceName: string): UrlEventInit {
+	let images =  [{ url: e.assetUrl }];
+	if (source.extractImagesFromBody) {
+		images = extractImagesFromPost(source, e.body).map(u => ({url: u}));
+	}
+
 	let start = DateTime.fromMillis(e.startDate).setZone(timeZone);
 	let end = DateTime.fromMillis(e.startDate).setZone(timeZone);
 
@@ -57,7 +64,7 @@ function convertSquarespaceEventToFullCalendarEvent(timeZone: string, e: any, ur
 		end: actualEnd.toUTC().toJSDate(),
 		url: new URL(url).origin + e.fullUrl,
 		description: e.body,
-		images: [{ url: e.assetUrl }],
+		images,
 		location: {
 			geoJSON: {
 				type: "Point",
