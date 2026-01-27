@@ -9,7 +9,7 @@ import { OpenAiInstagramResult, instagramInitialPrompt, executePrompt } from "..
 
 import { prisma } from '~~/server/utils/db';
 import { InstagramApiPost } from "~~/types";
-import { instagramRateLimitHeader, instagramTokenExpireAt } from '../metrics';
+import { instagramRateLimitHeader, instagramTokenExpireAt, instagramPostSkip } from '../metrics';
 
 const logger = mainLogger.child({ provider: 'instagram' });
 
@@ -113,7 +113,7 @@ async function fetchOcrResults(images: InstagramImageInit[]) {
 
 function instagramURL(token: string, sourceUsername: string) {
 	return `https://graph.facebook.com/v16.0/${process.env.INSTAGRAM_BUSINESS_USER_ID}?fields=`
-		+ `business_discovery.username(${sourceUsername}){media.limit(5){caption,permalink,timestamp,media_type,media_url,children{media_url,media_type}}}&media_type=IMAGE`
+		+ `business_discovery.username(${sourceUsername}){media.limit(5){caption,permalink,timestamp,media_type,media_url,children{media_url,media_type}}}`
 		+ `&access_token=${token}`
 }
 
@@ -384,12 +384,19 @@ async function hasPostBeenScraped(source: UrlSource, post: InstagramApiPost): Pr
 * @returns
 */
 async function handleInstagramPost(source: InstagramSource, apiPost: InstagramApiPost): Promise<UrlEventInit | null> {
+	if (apiPost.media_type != 'IMAGE') {
+		instagramPostSkip.inc({ reason: 'non-image' });
+		return null;
+	}
+
 	if (await hasPostBeenScraped(source, apiPost)) {
+		instagramPostSkip.inc({ reason: 'already-scraped' });
 		return null;
 	}
 
 	const dt = DateTime.fromISO(apiPost.timestamp);
 	if (dt && dt.diffNow().as('days') > 30) {
+		instagramPostSkip.inc({ reason: 'too-old' });
 		logger.warn(
 			{
 				sourceType: source.sourceType,
@@ -408,6 +415,7 @@ async function handleInstagramPost(source: InstagramSource, apiPost: InstagramAp
 
 	const maybeEvent = await extractEventFromPost(source, apiPost, images);
 	if (!maybeEvent) {
+		instagramPostSkip.inc({ reason: 'un-extractable' });
 		return null;
 	}
 

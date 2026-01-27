@@ -45,3 +45,9 @@ export const instagramTokenExpireAt = new Gauge({
 	name: 'instagram_token_expire_at',
 	help: 'timestamp (s since epoch) the currently used instagram token will expire',
 });
+
+export const instagramPostSkip = new Counter({
+	name: 'instagram_post_skip_count',
+	help: 'number of times instagram post scraping was skipped',
+	labelNames: ['reason'],
+});
