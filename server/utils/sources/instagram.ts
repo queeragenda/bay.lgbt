@@ -3,12 +3,12 @@ import { DateTime } from 'luxon';
 import { logger as mainLogger } from '~~/server/utils/logger';
 import { Prisma, InstagramPostScrapeRecord, UrlSource } from '@prisma/client';
 import { SourceFile, UrlEventInit, UrlScraper, UrlSourceInit } from '../http';
-import { Configuration, OpenAIApi } from "openai";
+import { Configuration, OpenAIApi } from 'openai';
 import vision from '@google-cloud/vision';
-import { OpenAiInstagramResult, instagramInitialPrompt, executePrompt } from "../openai";
+import { OpenAiInstagramResult, instagramInitialPrompt, executePrompt } from '../openai';
 
 import { prisma } from '~~/server/utils/db';
-import { InstagramApiPost } from "~~/types";
+import { InstagramApiPost } from '~~/types';
 import { instagramRateLimitHeader, instagramTokenExpireAt, instagramPostSkip } from '../metrics';
 
 const logger = mainLogger.child({ provider: 'instagram' });
@@ -20,9 +20,11 @@ if (!process.env.OPENAI_API_KEY) {
 	throw new Error('OPENAI_API_KEY not found.');
 }
 
-const openai = new OpenAIApi(new Configuration({
-	apiKey: process.env.OPENAI_API_KEY,
-}));
+const openai = new OpenAIApi(
+	new Configuration({
+		apiKey: process.env.OPENAI_API_KEY,
+	}),
+);
 
 export class InstagramScraper implements UrlScraper {
 	name = 'instagram';
@@ -42,7 +44,7 @@ export class InstagramScraper implements UrlScraper {
 
 		const posts = await fetchPosts(token, igSource);
 
-		const maybeEvents = await Promise.all(posts.map(post => handleInstagramPost(igSource, post)));
+		const maybeEvents = await Promise.all(posts.map((post) => handleInstagramPost(igSource, post)));
 
 		const events: UrlEventInit[] = [];
 		for (let maybeEvent of maybeEvents) {
@@ -57,7 +59,7 @@ export class InstagramScraper implements UrlScraper {
 	}
 
 	generateSources(sources: SourceFile): UrlSourceInit[] {
-		return sources.instagram.map(source => {
+		return sources.instagram.map((source) => {
 			return {
 				sourceName: source.username,
 				sourceCity: source.city,
@@ -66,20 +68,20 @@ export class InstagramScraper implements UrlScraper {
 				url: `https://instagram.com/${source.username}`,
 				extraData: {
 					contextClues: source.context_clues,
-				}
+				},
 			};
 		});
 	}
 }
 
 export interface InstagramSource extends UrlSource {
-	contextClues: string[]
-	username: string
+	contextClues: string[];
+	username: string;
 }
 
 interface InstagramImageInit {
-	url: string
-	data: ArrayBuffer
+	url: string;
+	data: ArrayBuffer;
 }
 
 async function fetchOcrResults(images: InstagramImageInit[]) {
@@ -100,21 +102,24 @@ async function fetchOcrResults(images: InstagramImageInit[]) {
 	const annotationsAll = await Promise.all(
 		images.map(async (image) => {
 			const [result] = await client.textDetection(Buffer.from(image.data));
-			const annotations = (result.textAnnotations && result.textAnnotations.length > 0) ?
-				result.fullTextAnnotation?.text || '' : '';
+			const annotations =
+				result.textAnnotations && result.textAnnotations.length > 0 ? result.fullTextAnnotation?.text || '' : '';
 
 			logger.debug({ url: image.url, result, annotations }, 'Executed OCR on image');
 			return annotations;
-		}));
+		}),
+	);
 
 	const result = annotationsAll.join('\n');
 	return result;
 }
 
 function instagramURL(token: string, sourceUsername: string) {
-	return `https://graph.facebook.com/v16.0/${process.env.INSTAGRAM_BUSINESS_USER_ID}?fields=`
-		+ `business_discovery.username(${sourceUsername}){media.limit(5){caption,permalink,timestamp,media_type,media_url,children{media_url,media_type}}}`
-		+ `&access_token=${token}`
+	return (
+		`https://graph.facebook.com/v16.0/${process.env.INSTAGRAM_BUSINESS_USER_ID}?fields=` +
+		`business_discovery.username(${sourceUsername}){media.limit(5){caption,permalink,timestamp,media_type,media_url,children{media_url,media_type}}}` +
+		`&access_token=${token}`
+	);
 }
 
 export class RateLimitError extends Error {
@@ -124,7 +129,7 @@ export class RateLimitError extends Error {
 
 	constructor(callCount: number, cpuTime: number, totalTime: number) {
 		super(`Instagram rate limit hit: calls: ${callCount}, cpuTime: ${cpuTime}, time: ${totalTime}`);
-		this.name = "RateLimitError";
+		this.name = 'RateLimitError';
 
 		this.callCount = callCount;
 		this.cpuTime = cpuTime;
@@ -152,7 +157,7 @@ async function fetchPosts(token: string, source: InstagramSource): Promise<Insta
 			throw new RateLimitError(callCount, totalCPUTime, totalTime);
 		}
 
-		logger.debug({ appUsage, username: source.username }, 'Current rate limit')
+		logger.debug({ appUsage, username: source.username }, 'Current rate limit');
 	}
 
 	const responseBody = await response.json();
@@ -161,7 +166,11 @@ async function fetchPosts(token: string, source: InstagramSource): Promise<Insta
 		throw new Error(responseBody.error.message);
 	}
 
-	if (!responseBody.business_discovery || !responseBody.business_discovery.media || !responseBody.business_discovery.media.data) {
+	if (
+		!responseBody.business_discovery ||
+		!responseBody.business_discovery.media ||
+		!responseBody.business_discovery.media.data
+	) {
 		logger.warn(
 			{
 				sourceType: source.sourceType,
@@ -169,7 +178,7 @@ async function fetchPosts(token: string, source: InstagramSource): Promise<Insta
 				response: responseBody,
 			},
 			'Got invalid API response from Instagram',
-		)
+		);
 
 		return [];
 	}
@@ -177,7 +186,11 @@ async function fetchPosts(token: string, source: InstagramSource): Promise<Insta
 	return responseBody.business_discovery.media.data;
 }
 
-async function extractEventFromPost(source: InstagramSource, post: InstagramApiPost, images: InstagramImageInit[]): Promise<UrlEventInit | null> {
+async function extractEventFromPost(
+	source: InstagramSource,
+	post: InstagramApiPost,
+	images: InstagramImageInit[],
+): Promise<UrlEventInit | null> {
 	const imageText = await extractTextFromPostImages(post, images);
 
 	const inference = await runInferenceOnPost(source, post, imageText);
@@ -188,16 +201,22 @@ async function extractEventFromPost(source: InstagramSource, post: InstagramApiP
 	return buildEvent(inference, post, source, images);
 }
 
-function buildEvent(inference: OpenAiInstagramResult, post: InstagramApiPost, source: InstagramSource, images: InstagramImageInit[]): UrlEventInit | null {
-	if (inference.isEvent === true
-		&& inference.startDay !== null
-		&& inference.startHourMilitaryTime !== null
-		&& inference.endHourMilitaryTime !== null
-		&& inference.startMinute !== null
-		&& inference.endMinute !== null
-		&& inference.endDay !== null
-		&& inference.hasStartHourInPost === true
-		&& inference.isPastEvent === false
+function buildEvent(
+	inference: OpenAiInstagramResult,
+	post: InstagramApiPost,
+	source: InstagramSource,
+	images: InstagramImageInit[],
+): UrlEventInit | null {
+	if (
+		inference.isEvent === true &&
+		inference.startDay !== null &&
+		inference.startHourMilitaryTime !== null &&
+		inference.endHourMilitaryTime !== null &&
+		inference.startMinute !== null &&
+		inference.endMinute !== null &&
+		inference.endDay !== null &&
+		inference.hasStartHourInPost === true &&
+		inference.isPastEvent === false
 	) {
 		let end = DateTime.fromObject(
 			{
@@ -205,7 +224,7 @@ function buildEvent(inference: OpenAiInstagramResult, post: InstagramApiPost, so
 				month: inference.endMonth || undefined,
 				day: inference.startDay,
 				hour: inference.endHourMilitaryTime,
-				minute: inference.endMinute
+				minute: inference.endMinute,
 			},
 			{ zone: 'America/Los_Angeles' },
 		);
@@ -218,11 +237,10 @@ function buildEvent(inference: OpenAiInstagramResult, post: InstagramApiPost, so
 				month: inference.startMonth || undefined,
 				day: inference.startDay,
 				hour: inference.startHourMilitaryTime,
-				minute: inference.startMinute
+				minute: inference.startMinute,
 			},
-			{ zone: 'America/Los_Angeles' }
+			{ zone: 'America/Los_Angeles' },
 		);
-
 
 		const event = {
 			start: start.toUTC().toJSDate(),
@@ -233,14 +251,16 @@ function buildEvent(inference: OpenAiInstagramResult, post: InstagramApiPost, so
 			images,
 		};
 
-		logger.debug({ postUrl: post.permalink, event, eventTitle: inference.title }, 'generated event details from ai inference');
+		logger.debug(
+			{ postUrl: post.permalink, event, eventTitle: inference.title },
+			'generated event details from ai inference',
+		);
 
 		return event;
 	}
 
 	return null;
 }
-
 
 function fixGeneratedJson(generatedJson: string): string {
 	return generatedJson.replace(/^[^{]*/, '').replace(/[^}]*$/, '');
@@ -249,20 +269,22 @@ function fixGeneratedJson(generatedJson: string): string {
 function postProcessOpenAiInstagramResponse(generatedJson: string): OpenAiInstagramResult {
 	const object = JSON.parse(fixGeneratedJson(generatedJson));
 
-	const hasAllProperties = object && Object.hasOwn(object, 'isEvent')
-		&& Object.hasOwn(object, 'title')
-		&& Object.hasOwn(object, 'startHourMilitaryTime')
-		&& Object.hasOwn(object, 'endHourMilitaryTime')
-		&& Object.hasOwn(object, 'isPastEvent')
-		&& Object.hasOwn(object, 'hasStartHourInPost')
-		&& Object.hasOwn(object, 'startMinute')
-		&& Object.hasOwn(object, 'endMinute')
-		&& Object.hasOwn(object, 'startDay')
-		&& Object.hasOwn(object, 'endDay')
-		&& Object.hasOwn(object, 'startMonth')
-		&& Object.hasOwn(object, 'endMonth')
-		&& Object.hasOwn(object, 'startYear')
-		&& Object.hasOwn(object, 'endYear');
+	const hasAllProperties =
+		object &&
+		Object.hasOwn(object, 'isEvent') &&
+		Object.hasOwn(object, 'title') &&
+		Object.hasOwn(object, 'startHourMilitaryTime') &&
+		Object.hasOwn(object, 'endHourMilitaryTime') &&
+		Object.hasOwn(object, 'isPastEvent') &&
+		Object.hasOwn(object, 'hasStartHourInPost') &&
+		Object.hasOwn(object, 'startMinute') &&
+		Object.hasOwn(object, 'endMinute') &&
+		Object.hasOwn(object, 'startDay') &&
+		Object.hasOwn(object, 'endDay') &&
+		Object.hasOwn(object, 'startMonth') &&
+		Object.hasOwn(object, 'endMonth') &&
+		Object.hasOwn(object, 'startYear') &&
+		Object.hasOwn(object, 'endYear');
 	if (!hasAllProperties) {
 		throw new Error('JSON does not contain expected fields');
 	}
@@ -301,21 +323,37 @@ function postProcessOpenAiInstagramResponse(generatedJson: string): OpenAiInstag
 	return object;
 }
 
-async function runInferenceOnPost(source: InstagramSource, post: InstagramApiPost, ocrResult: string | null): Promise<OpenAiInstagramResult | null> {
+async function runInferenceOnPost(
+	source: InstagramSource,
+	post: InstagramApiPost,
+	ocrResult: string | null,
+): Promise<OpenAiInstagramResult | null> {
 	const initialPrompt = instagramInitialPrompt(source, post, ocrResult);
-	logger.debug({ prompt: initialPrompt, username: source.username, postUrl: post.permalink }, 'Generated prompt for first round of inference')
+	logger.debug(
+		{ prompt: initialPrompt, username: source.username, postUrl: post.permalink },
+		'Generated prompt for first round of inference',
+	);
 
-	const initialResponse = await executePrompt(openai, initialPrompt);
-	const generatedJson = initialResponse.choices[0].message?.content;
-	if (!generatedJson) {
-		return null;
+	try {
+		const initialResponse = await executePrompt(openai, initialPrompt);
+		const generatedJson = initialResponse.choices[0].message?.content;
+		if (!generatedJson) {
+			return null;
+		}
+	} catch (e) {
+		logger.error(
+			{ sourceName: source.username, postUrl: post.permalink, error: e },
+			'error running instagram post inference',
+		);
+
+		throw e;
 	}
 
 	// Todo: run verification prompt
 
 	const result = postProcessOpenAiInstagramResponse(generatedJson);
 
-	logger.debug({ username: source.username, postUrl: post.permalink, result }, 'Performed inference on post')
+	logger.debug({ username: source.username, postUrl: post.permalink, result }, 'Performed inference on post');
 
 	return result;
 }
@@ -330,10 +368,12 @@ function getMediaUrls(post: InstagramApiPost): string[] | null {
 
 			return null;
 		case 'CAROUSEL_ALBUM':
-			return (post.children || { data: [] }).data
-				.map((child) => child.media_url)
-				// Keep only if defined, since it may be omitted.
-				.filter((mediaUrl) => mediaUrl);
+			return (
+				(post.children || { data: [] }).data
+					.map((child) => child.media_url)
+					// Keep only if defined, since it may be omitted.
+					.filter((mediaUrl) => mediaUrl)
+			);
 		case 'VIDEO':
 			// TODO: We can OCR the thumbnail_url, but due to a bug on Instagram's end we cannot access the `thumbnail_url` field.
 			// See https://developers.facebook.com/support/bugs/3431232597133817/?join_id=fa03b2657f7a9c for updates.
@@ -352,8 +392,8 @@ async function extractTextFromPostImages(post: InstagramApiPost, images: Instagr
 }
 
 /*
-* Stores the post from the IG API in the database returning the model, returns `null` if the post already existed
-*/
+ * Stores the post from the IG API in the database returning the model, returns `null` if the post already existed
+ */
 async function hasPostBeenScraped(source: UrlSource, post: InstagramApiPost): Promise<boolean> {
 	try {
 		await prisma.instagramPostScrapeRecord.create({
@@ -361,7 +401,7 @@ async function hasPostBeenScraped(source: UrlSource, post: InstagramApiPost): Pr
 				id: post.id,
 				url: post.permalink,
 				sourceId: source.id,
-			}
+			},
 		});
 
 		return false;
@@ -378,12 +418,12 @@ async function hasPostBeenScraped(source: UrlSource, post: InstagramApiPost): Pr
 }
 
 /**
-* Takes a given post, runs extractors on it if it's new, persists it to the
-* database as an Event if extractors determine it's an event
-* @param source
-* @param apiPost
-* @returns
-*/
+ * Takes a given post, runs extractors on it if it's new, persists it to the
+ * database as an Event if extractors determine it's an event
+ * @param source
+ * @param apiPost
+ * @returns
+ */
 async function handleInstagramPost(source: InstagramSource, apiPost: InstagramApiPost): Promise<UrlEventInit | null> {
 	if (apiPost.media_type != 'IMAGE') {
 		instagramPostSkip.inc({ reason: 'non-image' });
@@ -395,44 +435,67 @@ async function handleInstagramPost(source: InstagramSource, apiPost: InstagramAp
 		return null;
 	}
 
-	const dt = DateTime.fromISO(apiPost.timestamp);
-	if (dt && dt.diffNow().as('days') > 30) {
-		instagramPostSkip.inc({ reason: 'too-old' });
-		logger.warn(
+	try {
+		const dt = DateTime.fromISO(apiPost.timestamp);
+		if (dt && dt.diffNow().as('days') > 30) {
+			instagramPostSkip.inc({ reason: 'too-old' });
+			logger.warn(
+				{
+					sourceType: source.sourceType,
+					source: source.sourceName,
+					url: apiPost.permalink,
+					postTime: dt,
+				},
+				'Skipping Instagram scrape for event more than 30d in the past',
+			);
+			return null;
+		}
+
+		const mediaUrls = getMediaUrls(apiPost);
+
+		const images = mediaUrls ? await fetchImages(mediaUrls) : [];
+
+		const maybeEvent = await extractEventFromPost(source, apiPost, images);
+		if (!maybeEvent) {
+			instagramPostSkip.inc({ reason: 'un-extractable' });
+			return null;
+		}
+
+		return maybeEvent;
+	} catch (e) {
+		logger.error(
 			{
 				sourceType: source.sourceType,
 				source: source.sourceName,
 				url: apiPost.permalink,
-				postTime: dt,
+				post: apiPost,
+				error: e,
 			},
-			'Skipping Instagram scrape for event more than 30d in the past',
-		)
-		return null;
+			'failed to process instagram post',
+		);
+
+		await prisma.instagramPostScrapeRecord.deleteMany({
+			where: {
+				url: apiPost.permalink,
+			},
+		});
+
+		throw e;
 	}
-
-	const mediaUrls = getMediaUrls(apiPost);
-
-	const images = mediaUrls ? await fetchImages(mediaUrls) : [];
-
-	const maybeEvent = await extractEventFromPost(source, apiPost, images);
-	if (!maybeEvent) {
-		instagramPostSkip.inc({ reason: 'un-extractable' });
-		return null;
-	}
-
-	return maybeEvent;
 }
 
 async function fetchImages(mediaUrls: string[]): Promise<InstagramImageInit[]> {
-	return await Promise.all(mediaUrls.map(async url => {
-		const response = await fetch(url);
-		const data = await response.arrayBuffer();
+	return await Promise.all(
+		mediaUrls.map(async (url) => {
+			const response = await fetch(url);
+			const data = await response.arrayBuffer();
 
-		return {
-			url,
-			data,
-		};
-	}));
+			return {
+				url,
+				data,
+			};
+		}),
+	);
 }
 
 // Loads a token from the database, throws an error if no tokens are available.
@@ -443,16 +506,16 @@ async function getInstagramToken(): Promise<string> {
 			expiresAt: true,
 		},
 		where: {
-			expiresAt: { gt: new Date() }
+			expiresAt: { gt: new Date() },
 		},
 		orderBy: {
 			expiresAt: 'desc',
-		}
+		},
 	});
 
 	if (!row) {
 		const runtimeConfig = useRuntimeConfig();
-		throw new Error(`No valid Instagram tokens! Visit ${runtimeConfig.public.baseUrl}/fb-login/ to refresh!`)
+		throw new Error(`No valid Instagram tokens! Visit ${runtimeConfig.public.baseUrl}/fb-login/ to refresh!`);
 	}
 
 	instagramTokenExpireAt.set(row.expiresAt.getTime() / 1000);
