@@ -360,6 +360,7 @@ async function hasPostBeenScraped(source: UrlSource, post: InstagramApiPost): Pr
 			data: {
 				id: post.id,
 				url: post.permalink,
+				sourceId: source.id,
 			}
 		});
 
