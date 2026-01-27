@@ -139,7 +139,7 @@ export async function executePrompt(client: OpenAIApi, prompt: string) {
 		});
 		return res.data;
 	} catch (error: any) {
-		logger.error({ error: error.toString() }, 'Error running gpt');
+		logger.error({ error: error.toString(), fullError: error }, 'Error running gpt');
 		throw error;
 	}
 };
