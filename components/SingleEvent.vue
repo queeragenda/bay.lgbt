@@ -30,7 +30,7 @@ const eventImages = event.extendedProps.images;
 
 let eventDescriptionNewlines;
 if (eventDescription) {
-	eventDescriptionNewlines = eventDescription.replaceAll('\n', '<br>');
+	eventDescriptionNewlines = eventDescription.trim().replaceAll(/^(\s*\n)+$/gm, '<br>');
 }
 
 
