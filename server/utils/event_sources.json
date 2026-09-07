@@ -583,6 +583,11 @@
 			"url": "https://www.studsf.com/calendar?format=json",
 			"city": "sf",
 			"extract_images_from_html_body": true
+		},
+		{
+			"name": "Medicine for Nightmares",
+			"url": "https://medicinefornightmares.com/events?format=json",
+			"city": "sf"
 		}
 	],
 	"timely": [
