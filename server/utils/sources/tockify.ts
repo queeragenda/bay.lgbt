@@ -40,10 +40,18 @@ function convertTockifyEventToFullCalendarEvent(e: any, url: URL, sourceName: st
 		return { url: `https://d3flpus5evl89n.cloudfront.net/${image.ownerId}/${image.id}/scaled_512.jpg` };
 	});
 
+	const startMillis = e.when.start.millis;
+	let endMillis = 0;
+	if (e.when.end) {
+		endMillis = e.when.end.millis;
+	} else {
+		endMillis = startMillis + (3 * 60 * 60 * 1000);
+	}
+
 	return {
 		title: e.content.summary.text,
-		start: new Date(e.when.start.millis),
-		end: new Date(e.when.end.millis),
+		start: new Date(startMillis),
+		end: new Date(endMillis),
 		url: fullUrl,
 		images,
 		description: e.content.description.text,
