@@ -565,7 +565,7 @@
 		},
 		{
 			"name": "Guildhouse",
-			"url": "https://www.guildhouse.gg/events?format=json",
+			"url": "https://www.guildhouse.gg/calendar?format=json",
 			"city": "san-jose"
 		},
 		{
