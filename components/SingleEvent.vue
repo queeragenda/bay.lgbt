@@ -21,7 +21,6 @@ const end = toDate(event.end);
 const startTime = start.toLocaleDateString() + ' @ ' +
   start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-const eventHost = event.extendedProps.org;
 const eventURL = event.extendedProps.originalUrl;
 const eventID = event.id;
 const eventLocation = event.extendedProps.location;
@@ -39,6 +38,23 @@ const getImageClass = (index: number) => {
   const classes = ['single', 'double', 'triple'];
   return classes[index] || '';
 };
+
+
+const urlIfy = (fragment: string): string =>
+	 fragment
+		.toLowerCase()
+		.replace(/^\s+/, '')
+		.replace(/\s+$/, '')
+		.replaceAll(/[()]*/g, '')
+		.replaceAll(/[^a-zA-Z0-9]+/g, '-')
+		.replaceAll(/-+/g, '-');
+
+
+const organizerId = event.extendedProps.organizerId;
+const organizerName = event.extendedProps.organizer;
+const organizerSlug = urlIfy(organizerName);
+
+const organizerLink = `/o/${organizerId}/${organizerSlug}`;
 
 </script>
 
@@ -66,9 +82,10 @@ const getImageClass = (index: number) => {
         <hr>
         <div class="SingleEvent-bottom">
           <OldSchoolButton :to="eventURL">View Original</OldSchoolButton>
-          <!-- <OldSchoolButton :to="{ name: 'o-organizer', props: { organizer: props.event.extendedProps.organizer } }"> -->
-          <!-- More from {{ props.event.extendedProps.organizer }} -->
-          <!-- </OldSchoolButton> -->
+
+          <OldSchoolButton :to="{path: organizerLink}">
+            More from {{organizerName}}
+           </OldSchoolButton>
         </div>
       </OldSchoolWindow>
     </div>
