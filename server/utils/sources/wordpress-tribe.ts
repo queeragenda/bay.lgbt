@@ -14,11 +14,12 @@ export class WordpressTribeScraper implements UrlScraper {
 			let wpJson = await response.json();
 			let wpEvents = wpJson.events;
 
-			while (Object.hasOwn(wpJson, 'next_rest_url')) {
-				let next_page_url = wpJson.next_rest_url;
-				wpJson = await (await fetch(next_page_url)).json();
-				wpEvents = wpEvents.concat(wpJson.events);
-			}
+			// Skipping the infinite page-crawl bc it's dumping too many events into our DB
+			// while (Object.hasOwn(wpJson, 'next_rest_url')) {
+			// 	let next_page_url = wpJson.next_rest_url;
+			// 	wpJson = await (await fetch(next_page_url)).json();
+			// 	wpEvents = wpEvents.concat(wpJson.events);
+			// }
 
 			return wpEvents.map(convertWordpressTribeEventToFullCalendarEvent);
 		});
