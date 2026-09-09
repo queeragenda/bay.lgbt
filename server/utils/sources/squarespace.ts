@@ -59,7 +59,7 @@ function convertSquarespaceEventToFullCalendarEvent(source: UrlSource, timeZone:
 	}, { zone: 'America/Los_Angeles' });
 
 	return {
-		title: `${e.title} @ ${sourceName}`,
+		title: e.title,
 		start: actualStart.toUTC().toJSDate(),
 		end: actualEnd.toUTC().toJSDate(),
 		url: new URL(url).origin + e.fullUrl,

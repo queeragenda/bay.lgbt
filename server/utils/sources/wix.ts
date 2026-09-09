@@ -43,7 +43,7 @@ export class WixScraper implements UrlScraper {
 				return {
 					start: DateTime.fromISO(e.scheduling.config.startDate, { zone: timeZone }).toUTC().toJSDate(),
 					end: DateTime.fromISO(e.scheduling.config.endDate, { zone: timeZone }).toUTC().toJSDate(),
-					title: `${e.title} @ ${source.sourceName}`,
+					title: e.title,
 					url: e.eventPageUrl.base + e.eventPageUrl.path
 				};
 			});

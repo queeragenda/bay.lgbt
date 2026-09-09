@@ -112,7 +112,7 @@ async function getEventSeries(eventUrl: string) {
 
 function convertSchemaDotOrgEventToFullCalendarEvent(item: any, sourceName: string): UrlEventInit {
 	return {
-		title: `${item.name} @ ${sourceName}`,
+		title: item.name,
 		// Converts from System Time to UTC.
 		start: DateTime.fromISO(item.startDate).toUTC().toJSDate(),
 		end: DateTime.fromISO(item.endDate).toUTC().toJSDate(),

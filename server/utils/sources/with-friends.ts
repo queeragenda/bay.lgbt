@@ -31,7 +31,7 @@ export class WithFriendsScraper implements UrlScraper {
 
 				// Arbitrarily set end to be +3 hours from start.
 				// const end = new Date(start.getTime() + 3 * 60 * 60 * 1000);
-				const title = `${event.querySelector('[data-property="Name"]')!.textContent!.trim()} @ ${source.sourceName}`;
+				const title = event.querySelector('[data-property="Name"]')!.textContent!.trim();
 				const postUrl = 'https://withfriends.co' + event.querySelector('.wf-event-link')!.getAttribute('href');
 				return {
 					title,

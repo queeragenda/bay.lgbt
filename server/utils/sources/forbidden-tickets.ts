@@ -19,7 +19,7 @@ export class ForbiddenTicketsScraper implements UrlScraper {
 			}
 
 			return json.map((item: any) => ({
-				title: `${item.title}`,
+				title: item.title,
 				url: item.url,
 				start: DateTime.fromFormat(item.start, 'yyyy-MM-dd HH:mm:ss', { zone: 'UTC' }).toJSDate(),
 				end: DateTime.fromFormat(item.end, 'yyyy-MM-dd HH:mm:ss', { zone: 'UTC' }).toJSDate(),

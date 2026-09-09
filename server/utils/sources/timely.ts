@@ -29,7 +29,7 @@ export class TimelyScraper implements UrlScraper {
 				item = item[0];
 				const timeZone = item.timezone;
 				return {
-					title: `${item.title} @ ${source.sourceName}`,
+					title: item.title,
 					url: item.url,
 					start: DateTime.fromFormat(item.start_datetime, 'yyyy-MM-dd HH:mm:ss', { zone: timeZone }).toJSDate(),
 					end: DateTime.fromFormat(item.end_datetime, 'yyyy-MM-dd HH:mm:ss', { zone: timeZone }).toJSDate(),

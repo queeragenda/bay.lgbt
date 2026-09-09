@@ -36,8 +36,13 @@ export function urlEventToFullcalendar(event: UrlEvent, imageIds: number[], sour
 		logger.warn({ extendedProps: event.extendedProps, eventID: event.id, sourceID: event.sourceId, sourceName: source.sourceName }, 'Invalid JSON in extendedProps attribute, this is a bug!');
 	}
 
+	let title = event.title;
+	if (!title.includes('@')) {
+		title = `${title} @ ${source.sourceName}`;
+	}
+
 	return {
-		title: event.title,
+		title,
 		start: event.start,
 		end: event.end,
 		url: `/e/${urlIfy(source.sourceName)}/${event.id}/${urlIfy(event.title)}`,

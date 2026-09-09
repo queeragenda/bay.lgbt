@@ -22,7 +22,7 @@ export class GcalScraper implements UrlScraper {
 			const data = await response.json()
 
 			return data.items.map((item: any): UrlEventInit => ({
-				title: `${item.summary} @ ${source.sourceName}`,
+				title: item.summary,
 				start: item.start.dateTime,
 				end: item.end.dateTime,
 				url: item.htmlLink,

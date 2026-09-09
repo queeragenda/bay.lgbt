@@ -41,7 +41,7 @@ function convertTockifyEventToFullCalendarEvent(e: any, url: URL, sourceName: st
 	});
 
 	return {
-		title: `${e.content.summary.text} @${sourceName} `,
+		title: e.content.summary.text,
 		start: new Date(e.when.start.millis),
 		end: new Date(e.when.end.millis),
 		url: fullUrl,

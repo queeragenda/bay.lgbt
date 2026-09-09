@@ -216,7 +216,8 @@ function buildEvent(
 		inference.endMinute !== null &&
 		inference.endDay !== null &&
 		inference.hasStartHourInPost === true &&
-		inference.isPastEvent === false
+		inference.isPastEvent === false &&
+		inference.title !== null
 	) {
 		let end = DateTime.fromObject(
 			{
@@ -246,7 +247,7 @@ function buildEvent(
 			start: start.toUTC().toJSDate(),
 			end: end.toUTC().toJSDate(),
 			url: post.permalink,
-			title: `${inference.title} @ ${source.username}`,
+			title: inference.title,
 			description: post.caption,
 			images,
 		};
