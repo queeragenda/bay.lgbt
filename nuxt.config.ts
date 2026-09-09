@@ -52,14 +52,9 @@ export default {
 			},
 			route: ''
 		},
-		// Uncomment this to make nuxt devtools work (idk why this is required, i don't like it!)
-		// headers: {
-		// 	contentSecurityPolicy: {
-		// 		'script-src': ["'nonce-{{nonce}}'", "'strict-dynamic'"],
-		// 	},
-		// 	// 2.
-		// 	crossOriginEmbedderPolicy: false,
-		// },
+		headers: {
+		 crossOriginEmbedderPolicy: process.env.NODE_ENV === 'development' ? 'unsafe-none' : 'require-corp',
+		},
 	},
 
 	css: ['vue-final-modal/style.css'],
