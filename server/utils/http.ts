@@ -3,8 +3,8 @@ import { DateTime, Duration } from "luxon";
 import { prisma } from "./db";
 import { EventbriteScraper, EventbriteSingleScraper } from "./sources/eventbrite";
 import { ForbiddenTicketsScraper } from "./sources/forbidden-tickets";
-import { FullCalendarJsonScraper } from "./sources/fullcalendar-json";
 import { GcalScraper } from "./sources/google-calendar";
+import { IcalScraper } from "./sources/ical";
 import { SquarespaceScraper } from "./sources/squarespace";
 import { TimelyScraper } from "./sources/timely";
 import { TockifyScraper } from "./sources/tockify";
@@ -23,8 +23,8 @@ const SCRAPERS: UrlScraper[] = [
 	new EventbriteScraper(),
 	// new EventbriteSingleScraper(),
 	new ForbiddenTicketsScraper(),
-	new FullCalendarJsonScraper(),
 	new GcalScraper(),
+	new IcalScraper(),
 	new SquarespaceScraper(),
 	new TimelyScraper(),
 	new TockifyScraper(),
