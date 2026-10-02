@@ -480,13 +480,6 @@
 			"city": "sf"
 		}
 	],
-	"fullCalendarJson": [
-		{
-			"name": "San Francisco Fog RFC",
-			"url": "https://events.fogrugby.com/fullcalendar.json",
-			"city": "sf"
-		}
-	],
 	"googleCalendar": [
 		{
 			"name": "Trans Ladies Picnic",
@@ -531,6 +524,13 @@
 		{
 			"name": "442 Events",
 			"googleCalendarId": "goldpanmedia.com_vqf32n23jv95hq7he4vj0mavbg@group.calendar.google.com",
+			"city": "sf"
+		}
+	],
+	"ical": [
+		{
+			"name": "San Francisco Fog RFC",
+			"url": "https://events.fogrugby.com/fog.ics",
 			"city": "sf"
 		}
 	],
