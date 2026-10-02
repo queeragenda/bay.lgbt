@@ -11,4 +11,4 @@ jobs:
       - name: Typescript Build
         run: |
           npm i --locked
-          npm build
+          npm run build
