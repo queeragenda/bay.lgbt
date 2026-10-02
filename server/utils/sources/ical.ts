@@ -1,7 +1,6 @@
 import { logger as mainLogger } from '~~/server/utils/logger';
 import { UrlSource } from '@prisma/client';
 import { DateTime } from 'luxon';
-// @ts-ignore ical.js v1 ships without type definitions
 import ICAL from 'ical.js';
 import { SourceFile, UrlEventInit, UrlScraper, UrlSourceInit } from '../http';
 import { parseUnseenEventTtl } from '../event-ttl';
@@ -35,6 +34,13 @@ export class IcalScraper implements UrlScraper {
 	}
 }
 
+interface Occurrence {
+	event: ICAL.Event
+	start: DateTime
+	end: DateTime
+	recurring: boolean
+}
+
 export function parseIcal(text: string, source: { url: string, sourceName: string }, now: Date = new Date()): UrlEventInit[] {
 	const calendar = new ICAL.Component(ICAL.parse(text));
 
@@ -42,9 +48,9 @@ export function parseIcal(text: string, source: { url: string, sourceName: strin
 	const windowStart = DateTime.fromJSDate(now).minus({ months: 2 });
 	const windowEnd = DateTime.fromJSDate(now).plus({ years: 1 });
 
-	// Group overridden occurrences (RECURRENCE-ID) with the event they modify.
-	const masters = new Map<string, any>();
-	const exceptions: any[] = [];
+	// Group overridden occurrences (RECURRENCE-ID) with the event they modify. These share the original event's UID.
+	const masters = new Map<string, ICAL.Event>();
+	const exceptions: ICAL.Event[] = [];
 	for (const vevent of calendar.getAllSubcomponents('vevent')) {
 		const event = new ICAL.Event(vevent);
 		if (event.isRecurrenceException()) {
@@ -62,19 +68,19 @@ export function parseIcal(text: string, source: { url: string, sourceName: strin
 		}
 	}
 
-	const items: { event: any, start: DateTime, end: DateTime, recurring: boolean }[] = [];
+	const occurrences: Occurrence[] = [];
 	for (const event of masters.values()) {
-		const tzid = event.component.getFirstProperty('dtstart')?.getParameter('tzid');
+		const tzid = stringParam(event.component.getFirstProperty('dtstart')?.getParameter('tzid'));
 
 		if (!event.isRecurring()) {
 			const start = toDateTime(event.startDate, tzid);
 			const end = event.endDate ? toDateTime(event.endDate, tzid) : null;
-			items.push({ event, start, end: fixEnd(start, end, event.startDate.isDate), recurring: false });
+			occurrences.push({ event, start, end: fixEnd(start, end, event.startDate.isDate), recurring: false });
 			continue;
 		}
 
 		const iterator = event.iterator();
-		let next;
+		let next: ICAL.Time | null;
 		for (let i = 0; i < MAX_OCCURRENCES && (next = iterator.next()); i++) {
 			const start = toDateTime(next, tzid);
 			if (start > windowEnd) {
@@ -83,21 +89,26 @@ export function parseIcal(text: string, source: { url: string, sourceName: strin
 
 			const details = event.getOccurrenceDetails(next);
 			const end = toDateTime(details.endDate, tzid);
-			items.push({ event: details.item, start: toDateTime(details.startDate, tzid), end: fixEnd(start, end, next.isDate), recurring: true });
+			occurrences.push({ event: details.item, start: toDateTime(details.startDate, tzid), end: fixEnd(start, end, next.isDate), recurring: true });
 		}
 	}
 
-	// This app keys events by URL. Give each occurrence a unique one when the feed's URLs are shared or missing.
-	const urlCounts = new Map<string, number>();
-	items.forEach(({ event }) => {
-		const url = event.component.getFirstPropertyValue('url');
-		if (url) {
-			urlCounts.set(url, (urlCounts.get(url) || 0) + 1);
+	// This app keys events by URL. A UID is unique per event, but every occurrence of a recurring event shares its
+	// UID and URL, and many feeds share one URL across events or omit it, so those get a unique fragment below.
+	const linkCounts = new Map<string, number>();
+	const links = new Map<ICAL.Event, string | undefined>();
+	for (const { event } of occurrences) {
+		if (!links.has(event)) {
+			const link = eventLink(event);
+			links.set(event, link);
+			if (link) {
+				linkCounts.set(link, (linkCounts.get(link) || 0) + 1);
+			}
 		}
-	});
+	}
 
 	const events: UrlEventInit[] = [];
-	for (const { event, start, end, recurring } of items) {
+	for (const { event, start, end, recurring } of occurrences) {
 		if (!start.isValid || end < windowStart || start > windowEnd) {
 			continue;
 		}
@@ -109,10 +120,10 @@ export function parseIcal(text: string, source: { url: string, sourceName: strin
 			continue;
 		}
 
-		let url = event.component.getFirstPropertyValue('url');
-		if (!url || recurring || (urlCounts.get(url) || 0) > 1) {
-			const occurrence = recurring ? `-${start.toFormat('yyyyLLdd')}` : '';
-			url = `${url || source.url}#${encodeURIComponent(event.uid)}${occurrence}`;
+		let url = links.get(event);
+		if (!url || recurring || (linkCounts.get(url) || 0) > 1) {
+			const id = recurring ? `${event.uid}-${start.toFormat('yyyyLLdd')}` : event.uid;
+			url = withFragment(url || source.url, id);
 		}
 
 		events.push({
@@ -128,13 +139,39 @@ export function parseIcal(text: string, source: { url: string, sourceName: strin
 	return events;
 }
 
+// The event's URL property, or failing that the first link in its description.
+function eventLink(event: ICAL.Event): string | undefined {
+	const url = event.component.getFirstPropertyValue('url');
+	if (typeof url === 'string' && /^https?:\/\//i.test(url)) {
+		return url;
+	}
+	const match = event.description?.match(/https?:\/\/[^\s<>"']+/i);
+	return match ? match[0].replace(/[).,;:!?\]]+$/, '') : undefined;
+}
+
+// Adds an identifier to a URL's fragment, keeping any fragment it already has, so the result stays a valid URL.
+function withFragment(url: string, id: string): string {
+	try {
+		const parsed = new URL(url);
+		const existing = parsed.hash.replace(/^#/, '');
+		parsed.hash = existing ? `${existing}-${id}` : id;
+		return parsed.toString();
+	} catch {
+		return `${url.split('#')[0]}#${encodeURIComponent(id)}`;
+	}
+}
+
+function stringParam(value: string | string[] | undefined | null): string | undefined {
+	return Array.isArray(value) ? value[0] : value || undefined;
+}
+
 // Converts an ICAL.Time to a DateTime without relying on VTIMEZONE registration: UTC stays UTC, date-only values
 // and floating times use the event's TZID when it's an IANA name, otherwise DEFAULT_ZONE.
-function toDateTime(time: any, tzid?: string): DateTime {
-	const parts = { year: time.year, month: time.month, day: time.day, hour: time.hour, minute: time.minute, second: time.second };
+function toDateTime(time: ICAL.Time, tzid?: string): DateTime {
 	if (time.isDate) {
 		return DateTime.fromObject({ year: time.year, month: time.month, day: time.day }, { zone: DEFAULT_ZONE });
 	}
+	const parts = { year: time.year, month: time.month, day: time.day, hour: time.hour, minute: time.minute, second: time.second };
 	if (time.zone === ICAL.Timezone.utcTimezone) {
 		return DateTime.fromObject(parts, { zone: 'utc' });
 	}
