@@ -527,6 +527,13 @@
 			"city": "sf"
 		}
 	],
+	"ical": [
+		{
+			"name": "San Francisco Fog RFC",
+			"url": "https://events.fogrugby.com/fog.ics",
+			"city": "sf"
+		}
+	],
 	"wordPressTribe": [
 		{
 			"name": "LEATHER & LGBTQ Cultural District",

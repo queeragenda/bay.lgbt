@@ -4,6 +4,7 @@ import { prisma } from "./db";
 import { EventbriteScraper, EventbriteSingleScraper } from "./sources/eventbrite";
 import { ForbiddenTicketsScraper } from "./sources/forbidden-tickets";
 import { GcalScraper } from "./sources/google-calendar";
+import { IcalScraper } from "./sources/ical";
 import { SquarespaceScraper } from "./sources/squarespace";
 import { TimelyScraper } from "./sources/timely";
 import { TockifyScraper } from "./sources/tockify";
@@ -23,6 +24,7 @@ const SCRAPERS: UrlScraper[] = [
 	// new EventbriteSingleScraper(),
 	new ForbiddenTicketsScraper(),
 	new GcalScraper(),
+	new IcalScraper(),
 	new SquarespaceScraper(),
 	new TimelyScraper(),
 	new TockifyScraper(),
