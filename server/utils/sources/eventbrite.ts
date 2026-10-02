@@ -1,48 +1,47 @@
-import { JSDOM } from 'jsdom';
-import { DateTime } from 'luxon';
-
 import { logger as mainLogger } from '~~/server/utils/logger';
 import { UrlSource } from '@prisma/client';
-import { fetchCached, SourceFile, UrlEventInit, UrlScraper, UrlSourceInit } from '../http';
+import { fetchCached, fetchCachedWithHeaders, SourceFile, UrlEventInit, UrlScraper, UrlSourceInit } from '../http';
 import { geoJson } from '../geo';
 
 const logger = mainLogger.child({ provider: 'eventbrite' });
 
+const API_BASE = 'https://www.eventbriteapi.com/v3';
 
+// Safety cap on pages fetched per organizer (the API returns up to 50 events per page).
+const MAX_PAGES = 10;
+
+function authHeaders() {
+	return { Authorization: `Bearer ${process.env.EVENTBRITE_API_KEY}` };
+}
+
+// Eventbrite organizer pages used to embed every upcoming event as Schema.org JSON-LD, but that was removed around
+// June 2026 (see #31). This uses the documented organizer events endpoint instead, which returns an organizer's
+// upcoming public events (each occurrence of a series as its own event) with venue details and coordinates.
 export class EventbriteScraper implements UrlScraper {
 	name = 'eventbrite';
 
 	async scrape(source: UrlSource) {
-		return await fetchCached(source, source.url, async (response) => {
-			const html = await response.text();
-			// const dom = new JSDOM(html);
-			// const eventsRaw = JSON.parse(dom.window.document.querySelectorAll('script[type="application/ld+json"]')[1].innerHTML)
-			// 	.map(event => convertSchemaDotOrgEventToFullCalendarEvent(event, source.name));
-			const dom = new JSDOM(html);
-			const innerHtml = dom.window.document.querySelectorAll('script[type="application/ld+json"]')[1].innerHTML;
-			const eventsJson = JSON.parse(innerHtml).itemListElement;
+		const url = organizerEventsUrl(source.sourceID!);
 
-			logger.debug({ url: source.url, eventsJson }, 'Loaded eventsJson');
+		return await fetchCachedWithHeaders(source, url, authHeaders(), async (response) => {
+			let body = await response.json();
+			const events: any[] = body.events || [];
 
-			if (!Array.isArray(eventsJson)) {
-				logger.warn({ url: source.url, eventsJson }, 'Found event with invalid JSON on the page');
-				return [];
+			for (let page = 1; body.pagination?.has_more_items && page < MAX_PAGES; page++) {
+				const res = await fetch(organizerEventsUrl(source.sourceID!, body.pagination.continuation), { headers: authHeaders() });
+				if (!res.ok) {
+					logger.warn({ name: source.sourceName, status: res.status }, 'Error fetching next page of Eventbrite events');
+					break;
+				}
+				body = await res.json();
+				events.push(...(body.events || []));
 			}
 
-			const eventsFC = eventsJson.map((event: any) => convertSchemaDotOrgEventToFullCalendarEvent(event.item, source.sourceName));
+			logger.debug({ name: source.sourceName, count: events.length }, 'Loaded Eventbrite events');
 
-			// Since public & private Eventbrite endpoints provides a series of events as a single event, we need to split them up using their API.
-			const events = await Promise.all(eventsFC.map(async (rawEvent: any) => {
-				const isLongerThan3Days = (rawEvent.end.getTime() - rawEvent.start.getTime()) / (1000 * 3600 * 24) > 3;
-				if (isLongerThan3Days) {
-					const eventSeries = await getEventSeries(rawEvent.url);
-					return eventSeries.map((event: any) => convertEventbriteAPIEventToFullCalendarEvent(event, source.sourceName));
-				} else {
-					return rawEvent;
-				}
-			}));
-
-			return events.flat();
+			return events
+				.filter(event => !event.is_series_parent)
+				.map(event => convertEventbriteAPIEventToFullCalendarEvent(event, source.sourceName));
 		});
 	}
 
@@ -58,6 +57,14 @@ export class EventbriteScraper implements UrlScraper {
 			sourceCity: source.city,
 		}));
 	}
+}
+
+function organizerEventsUrl(organizerId: string, continuation?: string) {
+	const params = new URLSearchParams({ status: 'live', order_by: 'start_asc', expand: 'venue' });
+	if (continuation) {
+		params.set('continuation', continuation);
+	}
+	return `${API_BASE}/organizers/${organizerId}/events/?${params}`;
 }
 
 // TODO: come up with a way for event promoters to submit events to us and have us store them in the DB without
@@ -92,61 +99,35 @@ export class EventbriteSingleScraper implements UrlScraper {
 	}
 }
 
-function eventSeriesUrl(url: string) {
-	const series_id = url.split('-').pop();
-	return `https://www.eventbriteapi.com/v3/series/${series_id}/events/?token=${process.env.EVENTBRITE_API_KEY}`;
-}
-
-async function getEventSeries(eventUrl: string) {
-	// Split URL by '-' and get the last part.
-	const res = await fetch(eventSeriesUrl(eventUrl));
-	const body = await res.json();
-
-	// Sometimes the response returns 404 for whatever reason. I imagine for events with information set to private. Ignore those.
-	if (!body.events) {
-		return [];
-	}
-
-	return body.events;
-}
-
-function convertSchemaDotOrgEventToFullCalendarEvent(item: any, sourceName: string): UrlEventInit {
-	return {
-		title: item.name,
-		// Converts from System Time to UTC.
-		start: DateTime.fromISO(item.startDate).toUTC().toJSDate(),
-		end: DateTime.fromISO(item.endDate).toUTC().toJSDate(),
-		url: item.url,
-		description: item.description || null,
-		images: [{ url: item.image }],
-		location: {
-			geoJSON: geoJson(item.location?.geo?.longitude, item.location?.geo?.latitude),
-			eventVenue: {
-				name: item.location.name,
-				address: {
-					streetAddress: item.location.streetAddress,
-					addressLocality: item.location.addressLocality,
-					addressRegion: item.location.addressRegion,
-					postalCode: item.location.postalCode,
-					addressCountry: item.location.addressCountry
-				},
-				geo: item.location?.geo
-			}
-		}
-	};
-};
-
-// The problem with the Eventbrite developer API format is that it lacks geolocation.
+// Converts an event from the Eventbrite API, expanded with `venue`, into our event format.
 function convertEventbriteAPIEventToFullCalendarEvent(item: any, sourceName: string): UrlEventInit {
-	try {
-		return {
-			title: `${item.name.text} @ ${sourceName}`,
-			start: new Date(item.start.utc),
-			end: new Date(item.end.utc),
-			url: item.url,
-		};
-	} catch (e) {
-		console.log(item);
-		throw e;
-	}
-};
+	const venue = item.venue;
+	const address = venue?.address;
+	const image = item.logo?.original?.url || item.logo?.url;
+
+	return {
+		title: item.name.text,
+		start: new Date(item.start.utc),
+		end: new Date(item.end.utc),
+		url: item.url,
+		description: item.description?.html || item.summary || undefined,
+		images: image ? [{ url: image }] : undefined,
+		location: venue ? {
+			geoJSON: geoJson(Number(venue.longitude), Number(venue.latitude)),
+			eventVenue: {
+				name: venue.name,
+				address: {
+					streetAddress: [address?.address_1, address?.address_2].filter(Boolean).join(', ') || undefined,
+					addressLocality: address?.city,
+					addressRegion: address?.region,
+					postalCode: address?.postal_code,
+					addressCountry: address?.country,
+				},
+				geo: venue.latitude && venue.longitude ? {
+					latitude: Number(venue.latitude),
+					longitude: Number(venue.longitude),
+				} : undefined,
+			},
+		} : undefined,
+	};
+}
