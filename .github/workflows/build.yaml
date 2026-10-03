@@ -10,5 +10,6 @@ jobs:
 
       - name: Typescript Build
         run: |
+          set -e
           npm i --locked
           npx nuxt typecheck
