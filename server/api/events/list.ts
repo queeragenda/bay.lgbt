@@ -35,7 +35,10 @@ interface EventsQuery {
 
 function extractQuery(event: H3Event): EventsQuery {
 	const query = getQuery(event);
-	const eventQuery: EventsQuery = {};
+	const eventQuery: EventsQuery = {
+		loadFullEvent : query.format === 'full'
+	};
+
 	if (typeof query.organizerId === 'string') {
 		eventQuery.organizerId = Number(query.organizerId);
 	}
@@ -51,8 +54,6 @@ function extractQuery(event: H3Event): EventsQuery {
 	if (typeof query.cities === 'string') {
 		eventQuery.cities = query.cities.split(',');
 	}
-
-	eventQuery.loadFullEvent = query.format === 'full';
 
 	return eventQuery;
 }
