@@ -8,8 +8,11 @@ jobs:
       - name: Checkout project
         uses: actions/checkout@v7
 
+      - name: Install deps
+        run: npm i --locked
+
       - name: Typescript Build
+        # Honestly how hard is it to use an exit code come on now
         run: |
-          set -e
-          npm i --locked
-          npx nuxt typecheck
+          npx nuxt typecheck | tee err
+          exit $(grep error -c err)
