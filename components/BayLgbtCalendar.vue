@@ -62,6 +62,7 @@ const cityEnablement = useCityEnablement();
 
 const url = () => {
   let urlParams: any = {};
+	let onPurposeTypeError: int = 'hello';
 
   if (props.organizer && props.organizer.id) {
     urlParams.organizerId = props.organizer.id;
