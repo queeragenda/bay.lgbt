@@ -301,12 +301,21 @@ async function updatePersistedEvent(source: UrlSource, event: UrlEventInit) {
 		}),
 	};
 
-	await prisma.urlEvent.update({
+	const updatedEvent = await prisma.urlEvent.update({
 		where: {
 			url: event.url,
 		},
 		data: eventToUpdate,
-	})
+	});
+
+	// Images are only saved when an event is first inserted. If the source has since added images to an event that
+	// doesn't have any yet, save them now.
+	if (images?.length) {
+		const existingImages = await prisma.urlEventImage.count({ where: { eventID: updatedEvent.id } });
+		if (existingImages === 0) {
+			await persistImages(source, updatedEvent, images);
+		}
+	}
 }
 
 async function persistEvent(source: UrlSource, event: UrlEventInit): Promise<UrlEvent | undefined> {
