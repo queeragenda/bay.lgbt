@@ -2,7 +2,14 @@
 const route = useRoute();
 const { data } = await useFetch(`/api/organizer/${route.params.organizer_id}`);
 
-let title = route.params.organizer_slug;
+let slug: string;
+if (typeof route.params.organizer_slug === 'string') {
+	slug = route.params.organizer_slug;
+} else  {
+	slug = route.params.organizer_slug[0];
+}
+
+let title: string = slug;
 if (data?.value) {
   title = data.value.name;
 }

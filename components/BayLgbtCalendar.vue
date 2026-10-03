@@ -10,12 +10,12 @@ import FullCalendar from '@fullcalendar/vue3';
 import { useModal } from 'vue-final-modal';
 import FilterModal from './FilterModal.vue';
 import { type CalendarOptions } from '@fullcalendar/core/index.js';
+import { ApiOrganizer } from '~/types';
 
-const props = defineProps({
-  organizer: {},
-  events: {},
-  year_month: String,
-});
+const props = defineProps<{
+  organizer?: ApiOrganizer,
+  year_month?: string,
+}>();
 
 const getWindowHeight = () => {
   if (process.client) return window.innerHeight;
