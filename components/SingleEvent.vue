@@ -27,7 +27,7 @@ const eventLocation = event.extendedProps.location;
 const eventDescription = event.extendedProps.description;
 const eventImages = event.extendedProps.images;
 
-let eventDescriptionNewlines;
+let eventDescriptionNewlines: string | undefined;
 if (eventDescription) {
 	eventDescriptionNewlines = eventDescription.trim().replaceAll(/^(\s*\n)+$/gm, '<br>');
 }
