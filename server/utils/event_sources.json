@@ -532,6 +532,11 @@
 			"name": "San Francisco Fog RFC",
 			"url": "https://events.fogrugby.com/fog.ics",
 			"city": "sf"
+		},
+		{
+			"name": "Sapphic Chill Hangs",
+			"url": "webcal://api.luma.com/ics/get?entity=calendar&id=cal-9d2B9UO7vPB5aAd",
+			"city": "oakland"
 		}
 	],
 	"wordPressTribe": [
