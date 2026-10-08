@@ -8,7 +8,8 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "prisma-generate": "prisma generate",
-    "prisma": "prisma $*"
+    "prisma": "prisma $*",
+    "test-ig": "node ig-test.ts"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.7",
@@ -30,13 +31,14 @@
     "jsdom": "^21.1.0",
     "luxon": "^3.3.0",
     "nuxt-security": "^0.10.2",
-    "openai": "^3.2.1",
+    "openai": "^7.20.0",
     "pino": "^9.5.0",
     "pino-http": "^10.3.0",
     "prom-client": "^14.2.0",
     "sanitize-html": "^2.14.0",
     "vue-final-modal": "^4.0.4",
-    "vue-tsc": "^1.0.24"
+    "vue-tsc": "^1.0.24",
+    "zod": "^3.25.40"
   },
   "devDependencies": {
     "@artmizu/nuxt-prometheus": "^2.4.0",

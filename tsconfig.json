@@ -8,6 +8,7 @@
     "noEmit": false,
     "noEmitOnError": false,
     "checkJs": false,
-    "types": ["jquery"]
-  }
+    "types": ["jquery"],
+    "strict": true,
+  },
 }
