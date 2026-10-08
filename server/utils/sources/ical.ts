@@ -133,6 +133,7 @@ export function parseIcal(text: string, source: { url: string, sourceName: strin
 			url,
 			description: event.description || undefined,
 			location: event.location ? { eventVenue: { name: event.location } } : undefined,
+			images: eventImages(event),
 		});
 	}
 
@@ -147,6 +148,25 @@ function eventLink(event: ICAL.Event): string | undefined {
 	}
 	const match = event.description?.match(/https?:\/\/[^\s<>"']+/i);
 	return match ? match[0].replace(/[).,;:!?\]]+$/, '') : undefined;
+}
+
+// Image URLs from RFC 7986 IMAGE properties, then ATTACH properties that point at an image. Inline (base64) data
+// is skipped.
+function eventImages(event: ICAL.Event): { url: string }[] | undefined {
+	const urls = new Set<string>();
+	for (const name of ['image', 'attach']) {
+		for (const prop of event.component.getAllProperties(name)) {
+			const value = prop.getFirstValue();
+			const type = stringParam(prop.getParameter('fmttype'));
+			if (typeof value !== 'string' || !/^https?:\/\//i.test(value) || prop.getParameter('encoding')) {
+				continue;
+			}
+			if (name === 'image' || type?.startsWith('image/') || (!type && /\.(jpe?g|png|gif|webp)(\?|$)/i.test(value))) {
+				urls.add(value);
+			}
+		}
+	}
+	return urls.size ? [...urls].map(url => ({ url })) : undefined;
 }
 
 // Adds an identifier to a URL's fragment, keeping any fragment it already has, so the result stays a valid URL.
