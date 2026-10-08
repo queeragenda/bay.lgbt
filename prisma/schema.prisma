@@ -43,8 +43,9 @@ model UrlEvent {
   hideAfter     DateTime?
   extendedProps String?
 
-  source UrlSource       @relation(fields: [sourceId], references: [id])
-  images UrlEventImage[]
+  source                     UrlSource                   @relation(fields: [sourceId], references: [id])
+  images                     UrlEventImage[]
+  instagramPostScrapeRecords InstagramPostScrapeRecord[]
 }
 
 model UrlEventImage {
@@ -62,6 +63,10 @@ model InstagramPostScrapeRecord {
   id        String   @id
   url       String
   scrapedAt DateTime @default(now())
+
+  scrapeModel String?
+  eventId     Int?
+  event       UrlEvent? @relation(fields: [eventId], references: [id])
 
   sourceId Int?
   source   UrlSource? @relation(fields: [sourceId], references: [id])

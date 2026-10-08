@@ -1,11 +1,10 @@
 import { DateTime } from 'luxon';
 
 import { logger as mainLogger } from '~~/server/utils/logger';
-import { Prisma, InstagramPostScrapeRecord, UrlSource } from '@prisma/client';
+import { Prisma, InstagramPostScrapeRecord, UrlSource, UrlEvent } from '@prisma/client';
 import { SourceFile, UrlEventInit, UrlScraper, UrlSourceInit } from '../http';
-import { Configuration, OpenAIApi } from 'openai';
 import vision from '@google-cloud/vision';
-import { OpenAiInstagramResult, instagramInitialPrompt, executePrompt } from '../openai';
+import { OpenAiInstagramResult, OpenAiInstagramEvent, extractInstagramEvent } from '../openai';
 
 import { prisma } from '~~/server/utils/db';
 import { InstagramApiPost } from '~~/types';
@@ -19,12 +18,6 @@ if (!process.env.INSTAGRAM_BUSINESS_USER_ID) {
 if (!process.env.OPENAI_API_KEY) {
 	throw new Error('OPENAI_API_KEY not found.');
 }
-
-const openai = new OpenAIApi(
-	new Configuration({
-		apiKey: process.env.OPENAI_API_KEY,
-	}),
-);
 
 export class InstagramScraper implements UrlScraper {
 	name = 'instagram';
@@ -58,6 +51,19 @@ export class InstagramScraper implements UrlScraper {
 		return events;
 	}
 
+	async createdEventCallback(_source: UrlSource, events: UrlEvent[]): Promise<void> {
+		for (let e of events) {
+			await prisma.instagramPostScrapeRecord.updateMany({
+				where: {
+					url: e.url,
+				},
+				data: {
+					eventId: e.id,
+				},
+			});
+		}
+	}
+
 	generateSources(sources: SourceFile): UrlSourceInit[] {
 		return sources.instagram.map((source) => {
 			return {
@@ -84,7 +90,7 @@ interface InstagramImageInit {
 	data: ArrayBuffer;
 }
 
-async function fetchOcrResults(images: InstagramImageInit[]) {
+async function fetchOcrResults(images: InstagramImageInit[]): Promise<string[]> {
 	if (!process.env.GOOGLE_CLOUD_VISION_PRIVATE_KEY) {
 		throw new Error('GOOGLE_CLOUD_VISION_PRIVATE_KEY not found.');
 	}
@@ -110,8 +116,7 @@ async function fetchOcrResults(images: InstagramImageInit[]) {
 		}),
 	);
 
-	const result = annotationsAll.join('\n');
-	return result;
+	return annotationsAll;
 }
 
 function instagramURL(token: string, sourceUsername: string) {
@@ -198,153 +203,42 @@ async function extractEventFromPost(
 		return null;
 	}
 
-	return buildEvent(inference, post, source, images);
+	if (!inference.event) {
+		return null;
+	}
+
+	return buildEvent(inference.event, post, images);
 }
 
 function buildEvent(
-	inference: OpenAiInstagramResult,
+	inferenceEvent: OpenAiInstagramEvent,
 	post: InstagramApiPost,
-	source: InstagramSource,
 	images: InstagramImageInit[],
 ): UrlEventInit | null {
-	if (
-		inference.isEvent === true &&
-		inference.startDay !== null &&
-		inference.startHourMilitaryTime !== null &&
-		inference.endHourMilitaryTime !== null &&
-		inference.startMinute !== null &&
-		inference.endMinute !== null &&
-		inference.endDay !== null &&
-		inference.hasStartHourInPost === true &&
-		inference.isPastEvent === false &&
-		inference.title !== null
-	) {
-		let end = DateTime.fromObject(
-			{
-				year: inference.endYear || undefined,
-				month: inference.endMonth || undefined,
-				day: inference.startDay,
-				hour: inference.endHourMilitaryTime,
-				minute: inference.endMinute,
-			},
-			{ zone: 'America/Los_Angeles' },
-		);
-		// Allow Luxon to automatically take care of overflow (i.e. day 32 of the month).
-		end = end.plus({ days: inference.endDay - inference.startDay });
+	const event = {
+		start: DateTime.fromISO(inferenceEvent.start).toJSDate(),
+		end: DateTime.fromISO(inferenceEvent.end).toJSDate(),
+		url: post.permalink,
+		title: inferenceEvent.title,
+		description: post.caption,
+		images,
+	};
 
-		const start = DateTime.fromObject(
-			{
-				year: inference.startYear || undefined,
-				month: inference.startMonth || undefined,
-				day: inference.startDay,
-				hour: inference.startHourMilitaryTime,
-				minute: inference.startMinute,
-			},
-			{ zone: 'America/Los_Angeles' },
-		);
+	logger.debug(
+		{ postUrl: post.permalink, event, eventTitle: event.title },
+		'generated event details from ai inference',
+	);
 
-		const event = {
-			start: start.toUTC().toJSDate(),
-			end: end.toUTC().toJSDate(),
-			url: post.permalink,
-			title: inference.title,
-			description: post.caption,
-			images,
-		};
-
-		logger.debug(
-			{ postUrl: post.permalink, event, eventTitle: inference.title },
-			'generated event details from ai inference',
-		);
-
-		return event;
-	}
-
-	return null;
-}
-
-function fixGeneratedJson(generatedJson: string): string {
-	return generatedJson.replace(/^[^{]*/, '').replace(/[^}]*$/, '');
-}
-
-function postProcessOpenAiInstagramResponse(generatedJson: string): OpenAiInstagramResult {
-	const object = JSON.parse(fixGeneratedJson(generatedJson));
-
-	const hasAllProperties =
-		object &&
-		Object.hasOwn(object, 'isEvent') &&
-		Object.hasOwn(object, 'title') &&
-		Object.hasOwn(object, 'startHourMilitaryTime') &&
-		Object.hasOwn(object, 'endHourMilitaryTime') &&
-		Object.hasOwn(object, 'isPastEvent') &&
-		Object.hasOwn(object, 'hasStartHourInPost') &&
-		Object.hasOwn(object, 'startMinute') &&
-		Object.hasOwn(object, 'endMinute') &&
-		Object.hasOwn(object, 'startDay') &&
-		Object.hasOwn(object, 'endDay') &&
-		Object.hasOwn(object, 'startMonth') &&
-		Object.hasOwn(object, 'endMonth') &&
-		Object.hasOwn(object, 'startYear') &&
-		Object.hasOwn(object, 'endYear');
-	if (!hasAllProperties) {
-		throw new Error('JSON does not contain expected fields');
-	}
-
-	// Post-processing.
-	if (object.startYear === null) {
-		object.startYear = new Date().getFullYear();
-	}
-	if (object.endYear === null) {
-		object.endYear = object.startYear;
-	}
-	if (object.startMinute === null) {
-		object.startMinute = 0;
-	}
-	if (object.endMinute === null) {
-		object.endMinute = 0;
-	}
-	if (object.startMonth === 12 && object.endMonth === 1) {
-		object.endYear = object.startYear + 1;
-	}
-	if (object.endMonth === null) {
-		object.endMonth = object.startMonth;
-	}
-	if (object.endDay === null) {
-		object.endDay = object.startDay;
-	}
-	if (object.endHourMilitaryTime === null) {
-		// End 2 hours from startHourMilitaryTime
-		object.endHourMilitaryTime = object.startHourMilitaryTime + 2;
-		if (object.endHourMilitaryTime > 23) {
-			object.endHourMilitaryTime -= 24;
-			object.endDay = object.startDay + 1; // Would this overflow the month? Need to check.
-		}
-	}
-
-	return object;
+	return event;
 }
 
 async function runInferenceOnPost(
 	source: InstagramSource,
 	post: InstagramApiPost,
-	ocrResult: string | null,
+	ocrResult: string[] | null,
 ): Promise<OpenAiInstagramResult | null> {
-	const initialPrompt = instagramInitialPrompt(source, post, ocrResult);
-	logger.debug(
-		{ prompt: initialPrompt, username: source.username, postUrl: post.permalink },
-		'Generated prompt for first round of inference',
-	);
-
 	try {
-		const initialResponse = await executePrompt(openai, initialPrompt);
-		const generatedJson = initialResponse.choices[0].message?.content;
-		if (!generatedJson) {
-			return null;
-		}
-
-		// Todo: run verification prompt
-
-		const result = postProcessOpenAiInstagramResponse(generatedJson);
+		const result = await extractInstagramEvent(source, post, ocrResult || []);
 
 		logger.debug({ username: source.username, postUrl: post.permalink, result }, 'Performed inference on post');
 
@@ -385,7 +279,10 @@ function getMediaUrls(post: InstagramApiPost): string[] | null {
 	}
 }
 
-async function extractTextFromPostImages(post: InstagramApiPost, images: InstagramImageInit[]): Promise<string | null> {
+async function extractTextFromPostImages(
+	post: InstagramApiPost,
+	images: InstagramImageInit[],
+): Promise<string[] | null> {
 	const text = await fetchOcrResults(images);
 	logger.debug({ text, postID: post.id, postURL: post.permalink }, 'Performed OCR text extraction on post');
 
@@ -402,6 +299,7 @@ async function hasPostBeenScraped(source: UrlSource, post: InstagramApiPost): Pr
 				id: post.id,
 				url: post.permalink,
 				sourceId: source.id,
+				scrapeModel: '6l01',
 			},
 		});
 

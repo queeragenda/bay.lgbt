@@ -69,6 +69,8 @@ export interface UrlScraper {
 
 	scrape(source: UrlSource): Promise<UrlEventInit[]>
 	generateSources(sources: SourceFile): UrlSourceInit[]
+
+	createdEventCallback?(source: UrlSource, events: UrlEvent[]): Promise<void>
 }
 
 export interface UrlEventScrapeOptions {
