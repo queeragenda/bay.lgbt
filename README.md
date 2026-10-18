@@ -83,3 +83,4 @@ WIX_SYZYGY_COOP_SITE_ID
 # Funding
 Donations to keep bay.lgbt running are appreciated! Transparently, here are the costs to maintain the site:
 - Domain: $8/mo
+
