@@ -4,11 +4,12 @@ import './OldSchoolButton.css'
 
 defineProps<{
   to: any
+  external?: boolean
 }>()
 </script>
 
 <template>
-  <NuxtLink :to="$props.to" class="OldSchoolButton">
+  <NuxtLink :to="$props.to" :external="$props.external" class="OldSchoolButton">
     <button type="button">
       <slot></slot>
     </button>

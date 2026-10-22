@@ -28,6 +28,7 @@ export interface EventExtendedProps {
 	images?: string[]
 	createdAt: string | Date
 	originalUrl: string
+	outgoingUrl?: string
 	organizer: string
 }
 

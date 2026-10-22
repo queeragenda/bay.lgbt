@@ -21,8 +21,7 @@ const end = toDate(event.end);
 const startTime = start.toLocaleDateString() + ' @ ' +
   start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-const eventURL = event.extendedProps.originalUrl;
-const eventID = event.id;
+const eventURL = event.extendedProps.outgoingUrl || event.extendedProps.originalUrl;
 const eventLocation = event.extendedProps.location;
 const eventDescription = event.extendedProps.description;
 const eventImages = event.extendedProps.images;
@@ -81,7 +80,7 @@ const organizerLink = `/o/${organizerId}/${organizerSlug}`;
 
         <hr>
         <div class="SingleEvent-bottom">
-          <OldSchoolButton :to="eventURL">View Original</OldSchoolButton>
+          <OldSchoolButton :to="eventURL" external>View Original</OldSchoolButton>
 
           <OldSchoolButton :to="{path: organizerLink}">
             More from {{organizerName}}
