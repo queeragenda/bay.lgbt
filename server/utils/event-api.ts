@@ -2,6 +2,7 @@ import { EventInput } from "@fullcalendar/core";
 import { UrlEvent, UrlSource } from "@prisma/client";
 import sanitizeHtml from 'sanitize-html';
 import { ApiOrganizer } from "~~/types";
+import { isSfEagleSource } from './sf-eagle-outgoing';
 
 export function sourceToResponse(source: UrlSource): ApiOrganizer {
 	return {
@@ -14,7 +15,7 @@ export function sourceToResponse(source: UrlSource): ApiOrganizer {
 	}
 }
 
-export function urlEventToFullcalendar(event: UrlEvent, imageIds: number[], source: { sourceName: string, id: number }): EventInput {
+export function urlEventToFullcalendar(event: UrlEvent, imageIds: number[], source: Pick<UrlSource, 'sourceName' | 'id' | 'sourceType' | 'url'>): EventInput {
 	let extendedProps: any = {};
 	try {
 		if (event.extendedProps) {
@@ -48,11 +49,12 @@ export function urlEventToFullcalendar(event: UrlEvent, imageIds: number[], sour
 		url: `/e/${urlIfy(source.sourceName)}/${event.id}/${urlIfy(event.title)}`,
 		extendedProps: {
 			createdAt: event.createdAt,
-			originalUrl: event.url,
 			organizer: source.sourceName,
 			organizerId: source.id,
 			images: imageIds.map(imageUrl),
-			...extendedProps
+			...extendedProps,
+			originalUrl: event.url,
+			outgoingUrl: isSfEagleSource(source) ? `/api/events/${event.id}/outgoing` : undefined,
 		},
 	};
 }

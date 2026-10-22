@@ -100,13 +100,13 @@ async function fetchEvents(query: EventsQuery): Promise<EventInput[]> {
 			start: 'asc',
 		},
 		include: {
-			source: { select: { sourceName: true } },
+			source: { select: { sourceName: true, id: true, sourceType: true, url: true } },
 			...include,
 		},
 	});
 
 	const response = events
-		.map((event) => urlEventToFullcalendar(event, [], { sourceName: event.source.sourceName, id: event.sourceId }))
+		.map((event) => urlEventToFullcalendar(event, [], event.source))
 		.map((e) => {
 			if (!query.loadFullEvent) {
 				e.extendedProps = undefined;

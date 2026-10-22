@@ -1,0 +1,29 @@
+{
+  "note": "Selected real venue API fields observed 2026-10-22. Frontend hrefs and JSON-LD dates from current index and verified detail pages; minimal HTML is constructed in the test, not a raw venue snapshot. API timezone_abbr is deliberately unused (stale PDT after DST).",
+  "occurrences": [
+    {
+      "api": {
+        "id": 10012768,
+        "status": "publish",
+        "url": "https://wp.sf-eagle.com/event/karaoke-with-dana/2026-11-02/",
+        "utc_start_date": "2026-11-03 04:00:00",
+        "utc_end_date": "2026-11-03 09:00:00"
+      },
+      "href": "https://sf-eagle.com/events/karaoke-with-dana-10012768/",
+      "startDate": "2026-11-02T20:00:00-08:00",
+      "endDate": "2026-11-03T01:00:00-08:00"
+    },
+    {
+      "api": {
+        "id": 10025308,
+        "status": "publish",
+        "url": "https://wp.sf-eagle.com/event/beer-bust-3-34-2/2026-11-08/",
+        "utc_start_date": "2026-11-08 23:00:00",
+        "utc_end_date": "2026-11-09 03:00:00"
+      },
+      "href": "https://sf-eagle.com/events/beer-bust-3-34-2-10025308/",
+      "startDate": "2026-11-08T15:00:00-08:00",
+      "endDate": "2026-11-08T19:00:00-08:00"
+    }
+  ]
+}
